@@ -1,8 +1,7 @@
 import streamlit as st
 import pandas as pd
-import gspread
 from google.oauth2.service_account import Credentials
-from datetime import datetime
+import gspread
 
 # --- CONFIGURAR CREDENCIALES ---
 scope = [
@@ -10,37 +9,28 @@ scope = [
     "https://www.googleapis.com/auth/drive"
 ]
 
-creds = Credentials.from_service_account_file(
-    "Crenciales_CuentaServicio.json",  # ← renómbralo a tu archivo
-    scopes=scope
-)
-
+creds = Credentials.from_service_account_file("Acceso_SuraPT.json", scopes=scope)
 client = gspread.authorize(creds)
 
-# --- ABRIR LA HOJA DE GOOGLE ---
-sheet = client.open("bd_prueba_streamlit").sheet1
+# --- ABRIR SPREADSHEET ---
+SHEET_URL = "https://docs.google.com/spreadsheets/d/1N968vVRp3VfX8r1sRdUA8bdeMxx6Ldjj_a4_coah_BY/edit?gid=0#gid=0"
+sheet = client.open_by_url(SHEET_URL).sheet1  # primera hoja
 
-st.title("Prueba de registro (Streamlit + Google Sheets)")
+st.title("Prueba de Google Sheets + Streamlit")
 
-with st.form("formulario"):
-    folio = st.text_input("Folio")
+# --- FORMULARIO ---
+with st.form("formulario_prueba"):
+    nombre = st.text_input("Nombre")
     estatus = st.selectbox("Estatus", ["Nuevo", "En proceso", "Finalizado"])
-    comentario = st.text_area("Comentario opcional")
-    
-    enviar = st.form_submit_button("Guardar")
+    enviado = st.form_submit_button("Guardar")
 
-if enviar:
-    row = [
-        datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-        folio,
-        estatus,
-        comentario
-    ]
-    sheet.append_row(row)
-    st.success("Registro guardado con éxito 🎉")
+# --- GUARDAR EN GOOGLE SHEETS ---
+if enviado:
+    sheet.append_row([nombre, estatus])
+    st.success("Datos guardados correctamente en Google Sheets.")
 
-# --- MOSTRAR HISTORIAL ---
-st.subheader("Historial")
-data = sheet.get_all_records()
-df = pd.DataFrame(data)
+# --- MOSTRAR DATOS ---
+st.subheader("Datos actuales en la hoja")
+datos = sheet.get_all_records()
+df = pd.DataFrame(datos)
 st.dataframe(df)
