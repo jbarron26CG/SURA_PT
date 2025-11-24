@@ -3,16 +3,26 @@ import pandas as pd
 from google.oauth2.service_account import Credentials
 from googleapiclient.discovery import build
 from googleapiclient.http import MediaIoBaseUpload
+from googleapiclient.errors import HttpError
+import mimetypes
 import io
 import gspread
 from datetime import datetime
 import re
 
-# ================================
-#   FUNCIONES PARA GOOGLE DRIVE
-# ================================
-def obtener_o_crear_carpeta(nombre_carpeta, parent_id, drive_service):
 
+# =====================================================
+#                     FUNCIONES
+# =====================================================
+
+# --- Detectar MIME type ---
+def obtener_mime_type(nombre_archivo):
+    tipo, _ = mimetypes.guess_type(nombre_archivo)
+    return tipo if tipo else "application/octet-stream"
+
+
+# --- Buscar o crear carpeta ---
+def obtener_o_crear_carpeta(nombre_carpeta, parent_id, drive_service):
     query = (
         f"name = '{nombre_carpeta}' "
         f"and mimeType = 'application/vnd.google-apps.folder' "
@@ -41,55 +51,75 @@ def obtener_o_crear_carpeta(nombre_carpeta, parent_id, drive_service):
     return nueva["id"]
 
 
+# --- Subir archivo a Google Drive ---
 def subir_archivo_drive(nombre_archivo, contenido, mime_type, folder_id, drive_service):
+    try:
+        # Asegurar MIME type válido
+        if not mime_type:
+            mime_type = obtener_mime_type(nombre_archivo)
 
-    file_metadata = {
-        "name": nombre_archivo,
-        "parents": [folder_id]
-    }
+        file_metadata = {
+            "name": nombre_archivo,
+            "parents": [folder_id]
+        }
 
-    media = MediaIoBaseUpload(io.BytesIO(contenido), mimetype=mime_type)
+        media = MediaIoBaseUpload(
+            io.BytesIO(contenido),
+            mimetype=mime_type,
+            resumable=False
+        )
 
-    archivo = drive_service.files().create(
-        body=file_metadata,
-        media_body=media,
-        fields="id"
-    ).execute()
+        archivo = drive_service.files().create(
+            body=file_metadata,
+            media_body=media,
+            fields="id"
+        ).execute()
 
-    return archivo["id"]
+        return archivo["id"]
+
+    except HttpError as e:
+        st.error("⚠ Error al subir archivo a Google Drive")
+        st.code(e.content)
+        raise
 
 
-# ================================
-#     CONFIGURAR CREDENCIALES
-# ================================
+# =====================================================
+#              CONFIGURACIÓN DE GOOGLE
+# =====================================================
+
 scope = [
     "https://www.googleapis.com/auth/spreadsheets",
     "https://www.googleapis.com/auth/drive"
 ]
 
-# 🔥 AHORA LAS CREDENCIALES SE LEEN DE STREAMLIT SECRETS
+# CREDENCIALES DESDE streamlit secrets
 creds = Credentials.from_service_account_info(
     st.secrets["gcp_service_account"],
     scopes=scope
 )
 
 client = gspread.authorize(creds)
+
+# Drive service
 drive_service = build("drive", "v3", credentials=creds)
 
 
-# ================================
-#     ABRIR SPREADSHEETS
-# ================================
+# =====================================================
+#                   SPREADSHEETS
+# =====================================================
+
+# Formulario
 SHEET_URL = "https://docs.google.com/spreadsheets/d/1N968vVRp3VfX8r1sRdUA8bdeMxx6Ldjj_a4_coah_BY/edit?gid=0#gid=0"
 sheet_form = client.open_by_url(SHEET_URL).sheet1
 
+# Usuarios
 SHEET_LOGIN = "https://docs.google.com/spreadsheets/d/14ByPe5nivtsO1k-lTeJLOY1SPAtqsA9sEQnjArIk4Ik/edit?gid=0#gid=0"
 sheet_users = client.open_by_url(SHEET_LOGIN).worksheet("Login")
 
 
-# ================================
-#      CARGAR USUARIOS
-# ================================
+# =====================================================
+#                 CARGAR USUARIOS
+# =====================================================
 def cargar_usuarios(sheet):
     datos = sheet.get_all_records()
     return pd.DataFrame(datos)
@@ -97,9 +127,9 @@ def cargar_usuarios(sheet):
 df_usuarios = cargar_usuarios(sheet_users)
 
 
-# ================================
-#       FORMULARIO LOGIN
-# ================================
+# =====================================================
+#                     LOGIN
+# =====================================================
 def login(df):
 
     st.title("Inicio de Sesión")
@@ -124,9 +154,9 @@ def login(df):
             st.error("Usuario o contraseña incorrectos")
 
 
-# ================================
-#       VISTA: FORMULARIO
-# ================================
+# =====================================================
+#              FORMULARIO DE CAPTURA
+# =====================================================
 def vista_capturista():
 
     st.title("Registro nuevo siniestro")
@@ -157,87 +187,85 @@ def vista_capturista():
 
         enviado = st.form_submit_button("Guardar")
 
-    # ================================
-    #        VALIDACIONES
-    # ================================
+    # -----------------------------
+    #      Validaciones
+    # -----------------------------
     errores = []
 
     if not Siniestro:
-        errores.append("El número de siniestro es obligatorio.")
+        errores.append("• El número de siniestro es obligatorio.")
     if not Usuario:
-        errores.append("El usuario es obligatorio.")
+        errores.append("• El usuario es obligatorio.")
 
     email_regex = r"^[\w\.-]+@[\w\.-]+\.\w+$"
     if Correo and not re.match(email_regex, Correo):
-        errores.append("El correo no tiene un formato válido.")
+        errores.append("• El correo no tiene un formato válido.")
 
-    # ================================
-    #          GUARDAR DATOS
-    # ================================
+    # -----------------------------
+    #        Guardar datos
+    # -----------------------------
     if enviado:
 
         if errores:
-            st.error("Revisa:\n\n- " + "\n- ".join(errores))
+            st.error("Corrige lo siguiente:\n\n" + "\n".join(errores))
+            return
 
-        else:
-            # --- 1. Crear carpeta del siniestro ---
-            root_folder_id = "1eYIU7fW_x2D4HU8GrsYzdDS5Bigf3T_2"
-            nombre_carpeta = f"SINIESTRO_{Siniestro}"
+        # 1. Crear carpeta en Drive
+        root_folder_id = "1eYIU7fW_x2D4HU8GrsYzdDS5Bigf3T_2"
+        nombre_carpeta = f"SINIESTRO_{Siniestro}"
 
-            carpeta_id = obtener_o_crear_carpeta(
-                nombre_carpeta, root_folder_id, drive_service
-            )
+        carpeta_id = obtener_o_crear_carpeta(
+            nombre_carpeta, root_folder_id, drive_service
+        )
 
-            carpeta_link = f"https://drive.google.com/drive/folders/{carpeta_id}"
+        carpeta_link = f"https://drive.google.com/drive/folders/{carpeta_id}"
 
-            # --- 2. Subir archivos ---
-            links_archivos = []
+        # 2. Subir archivos
+        links_archivos = []
 
-            if archivos:
-                for archivo in archivos:
-                    archivo_id = subir_archivo_drive(
-                        archivo.name,
-                        archivo.read(),
-                        archivo.type,
-                        carpeta_id,
-                        drive_service
-                    )
-                    links_archivos.append(
-                        f"https://drive.google.com/file/d/{archivo_id}/view"
-                    )
+        if archivos:
+            for archivo in archivos:
 
-            links_texto = ", ".join(links_archivos)
+                archivo_id = subir_archivo_drive(
+                    archivo.name,
+                    archivo.read(),
+                    archivo.type,
+                    carpeta_id,
+                    drive_service
+                )
 
-            # --- 3. Guardar en Google Sheet ---
-            sheet_form.append_row([
-                Siniestro,
-                Estatus,
-                datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-                Usuario,
-                Comentario,
-                Correo,
-                carpeta_link,
-                links_texto
-            ])
+                links_archivos.append(
+                    f"https://drive.google.com/file/d/{archivo_id}/view"
+                )
 
-            st.success("Datos guardados correctamente")
+        links_texto = ", ".join(links_archivos)
 
+        # 3. Guardar en Google Sheets
+        sheet_form.append_row([
+            Siniestro,
+            Estatus,
+            datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+            Usuario,
+            Comentario,
+            Correo,
+            carpeta_link,
+            links_texto
+        ])
 
-    # ================================
-    #    MOSTRAR DATOS EXISTENTES
-    # ================================
-    st.subheader("Datos actuales en la hoja")
+        st.success("Registro guardado correctamente ✔")
 
+    # Mostrar existentes
+    st.subheader("Datos actuales")
     datos = sheet_form.get_all_records()
     df = pd.DataFrame(datos)
-
     st.dataframe(df)
 
 
-# ================================
-#       VISTA: ADMIN
-# ================================
+# =====================================================
+#                       ADMIN
+# =====================================================
 def vista_admin():
+
     st.title("Panel Administrador")
 
     datos = sheet_form.get_all_records()
@@ -247,9 +275,9 @@ def vista_admin():
     st.write("Total de registros:", len(df))
 
 
-# ================================
-#       CONTROL DE SESIÓN
-# ================================
+# =====================================================
+#              CONTROL DE SESIÓN
+# =====================================================
 if "auth" not in st.session_state:
     st.session_state["auth"] = False
 
@@ -257,10 +285,10 @@ if not st.session_state["auth"]:
     login(df_usuarios)
     st.stop()
 
+# =====================================================
+#                 INTERFAZ PRINCIPAL
+# =====================================================
 
-# ================================
-#         INTERFAZ PRINCIPAL
-# ================================
 st.sidebar.write(f"USUARIO: **{st.session_state['USUARIO']}**")
 st.sidebar.write(f"ROL: **{st.session_state['ROL']}**")
 
