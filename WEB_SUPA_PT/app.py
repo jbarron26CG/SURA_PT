@@ -126,13 +126,12 @@ def login(df):
 
         for fila in registros:
             if fila["USUARIO"] == user and fila["PASSWORD"] == password:
-                # Guardamos datos en session_state
-                st.session_state["logged_in"] = True
+                st.session_state["auth"] = True
                 st.session_state["USUARIO"] = fila["USUARIO"]
                 st.session_state["LIQUIDADOR"] = fila["LIQUIDADOR"]
                 st.session_state["ROL"] = fila["ROL"]
                 st.success("Acceso exitoso.")
-                st.experimental_rerun()
+                st.rerun()
 
         st.error("Credenciales incorrectas")
 
