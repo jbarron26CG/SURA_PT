@@ -118,24 +118,23 @@ def login(df):
 
     st.title("Inicio de Sesión")
 
-    usuario = st.text_input("USUARIO:")
+    user = st.text_input("USUARIO:")
     password = st.text_input("CONTRASEÑA:", type="password")
 
     if st.button("Ingresar"):
-        fila = df[
-            (df["USUARIO"] == usuario) &
-            (df["PASSWORD"] == password)
-        ]
+        registros = sheet_users.get_all_records()
 
-        if len(fila) == 1:
-            st.session_state["auth"] = True
-            st.session_state["USUARIO"] = usuario
-            st.session_state["ROL"] = fila.iloc[0]["ROL"]
+        for fila in registros:
+            if fila["USUARIO"] == user and fila["PASSWORD"] == password:
+                # Guardamos datos en session_state
+                st.session_state["logged_in"] = True
+                st.session_state["USUARIO"] = fila["USUARIO"]
+                st.session_state["LIQUIDADOR"] = fila["LIQUIDADOR"]
+                st.session_state["ROL"] = fila["ROL"]
+                st.success("Acceso exitoso.")
+                st.experimental_rerun()
 
-            st.success("Acceso concedido")
-            st.rerun()
-        else:
-            st.error("Usuario o contraseña incorrectos")
+        st.error("Credenciales incorrectas")
 
 
 # =======================================================
@@ -173,7 +172,6 @@ def vista_liquidador():
                 ]
             )
             Correo = st.text_input("CORREO ELECTRÓNICO")
-            Usuario = st.text_input("USUARIO (interno)")
             Comentario = st.text_area("Comentario")
 
             archivos = st.file_uploader(
@@ -189,15 +187,14 @@ def vista_liquidador():
 
         if not Siniestro:
             errores.append("El número de siniestro es obligatorio.")
-        if not Usuario:
-            errores.append("El usuario es obligatorio.")
 
         email_regex = r"^[\w\.-]+@[\w\.-]+\.\w+$"
         if Correo and not re.match(email_regex, Correo):
             errores.append("El correo no tiene un formato válido.")
 
         if enviado:
-
+            Correo_liquidador = st.session_state["USUARIO"]
+            liquidador = st.session_state["LIQUIDADOR"]
             if errores:
                 st.error("Revisa:\n\n- " + "\n- ".join(errores))
             else:
@@ -226,9 +223,10 @@ def vista_liquidador():
                     Siniestro,
                     Estatus,
                     datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-                    Usuario,
                     Comentario,
                     Correo,
+                    Correo_liquidador,
+                    liquidador,
                     carpeta_link
                 ])
 
