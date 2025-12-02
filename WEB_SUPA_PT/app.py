@@ -261,7 +261,7 @@ def vista_liquidador():
                     Asegurado_Correo,
                     Correo_liquidador,
                     liquidador,
-                    FechaSiniestro,
+                    FechaSiniestro.strftime("%Y-%m-%d"),
                     Asegurado_Nombre,
                     Asegurado_Telefono,
                     Asegurado_Correo,
