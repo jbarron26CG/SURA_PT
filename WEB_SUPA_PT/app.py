@@ -156,30 +156,65 @@ def vista_liquidador():
 
         st.header("Registro nuevo siniestro")
 
-        with st.form("Formulario Alta"):
+        with st.form("form_siniestro"):
 
-            Siniestro = st.text_input("NO. DE SINIESTRO")
-            Estatus = st.selectbox(
-                "ESTATUS",
-                [
-                    "ALTA FOLIO",
-                    "CONTACTO PENDIENTE DE CARGA",
-                    "PENDIENTE DE CONTACTO",
-                    "PENDIENTE VALIDACIÓN DIGITAL",
-                    "REPROCESO EN VALIDACIÓN DIGITAL",
-                    "PAGADO"
-                ]
-            )
-            Correo = st.text_input("CORREO ELECTRÓNICO")
-            Comentario = st.text_area("Comentario")
+            # =============================
+            #   1) DATOS DEL SINIESTRO
+            # =============================
+            with st.expander("📁 Datos del siniestro", expanded=True):
+                Siniestro = st.text_input("Número de siniestro")
+                Estatus = st.selectbox(
+                    "Estatus",
+                    [
+                        "ALTA FOLIO",
+                        "CONTACTO PENDIENTE DE CARGA",
+                        "PENDIENTE DE CONTACTO",
+                        "PENDIENTE VALIDACIÓN DIGITAL",
+                        "REPROCESO EN VALIDACIÓN DIGITAL",
+                        "PAGADO"
+                    ]
+                )
+                FechaSiniestro = st.date_input("Fecha del siniestro")
+                Comentario = st.text_area("Comentario")
 
-            archivos = st.file_uploader(
-                "Subir documentos",
-                type=["pdf", "jpg", "jpeg", "png", "xlsx", "xls", "docx"],
-                accept_multiple_files=True
-            )
+            # =============================
+            #   2) DATOS DEL ASEGURADO
+            # =============================
+            with st.expander("👤 Datos del asegurado"):
+                Asegurado_Nombre = st.text_input("Nombre del asegurado")
+                Asegurado_Telefono = st.text_input("Teléfono del asegurado")
+                Asegurado_Correo = st.text_input("Correo del asegurado")
+
+            # =============================
+            #   3) DATOS DEL PROPIETARIO
+            # =============================
+            with st.expander("🏠 Datos del propietario"):
+                Propietario_Nombre = st.text_input("Nombre del propietario")
+                Propietario_Telefono = st.text_input("Teléfono del propietario")
+                Propietario_Correo = st.text_input("Correo del propietario")
+
+            # =============================
+            #   4) DATOS DEL VEHÍCULO
+            # =============================
+            with st.expander("🚗 Datos del vehículo"):
+                Marca = st.text_input("Marca")
+                Modelo = st.text_input("Modelo")
+                Año = st.number_input("Año", min_value=1900, max_value=2050, step=1)
+                Placas = st.text_input("Placas")
+                Serie = st.text_input("Número de serie")
+
+            # =============================
+            #   DOCUMENTOS
+            # =============================
+            with st.expander("📎 Documentos"):
+                archivos = st.file_uploader(
+                    "Subir documentos",
+                    type=["pdf", "jpg", "jpeg", "png", "xlsx", "xls", "docx"],
+                    accept_multiple_files=True
+                )
 
             enviado = st.form_submit_button("Guardar")
+
 
         # ---------- VALIDACIONES ----------
         errores = []
@@ -188,7 +223,7 @@ def vista_liquidador():
             errores.append("El número de siniestro es obligatorio.")
 
         email_regex = r"^[\w\.-]+@[\w\.-]+\.\w+$"
-        if Correo and not re.match(email_regex, Correo):
+        if Asegurado_Correo and not re.match(email_regex, Asegurado_Correo):
             errores.append("El correo no tiene un formato válido.")
 
         if enviado:
@@ -223,9 +258,21 @@ def vista_liquidador():
                     Estatus,
                     datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
                     Comentario,
-                    Correo,
+                    Asegurado_Correo,
                     Correo_liquidador,
                     liquidador,
+                    FechaSiniestro,
+                    Asegurado_Nombre,
+                    Asegurado_Telefono,
+                    Asegurado_Correo,
+                    Propietario_Nombre,
+                    Propietario_Telefono,
+                    Propietario_Correo,
+                    Marca,
+                    Modelo,
+                    Año,
+                    Placas,
+                    Serie,
                     carpeta_link
                 ])
 
