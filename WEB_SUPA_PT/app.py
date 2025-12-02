@@ -141,15 +141,120 @@ def login(df):
 # =======================================================
 #               VISTA CAPTURISTA
 # =======================================================
-def vista_capturista():
+def vista_liquidador():
 
-    st.title("Registro nuevo siniestro")
+    st.title("Panel Liquidador")
 
-    with st.form("Formulario Alta"):
+    # Selector de sección
+    opcion = st.sidebar.radio(
+        "Seleccione una sección:",
+        ["Registrar siniestro", "Modificar siniestro"]
+    )
 
-        Siniestro = st.text_input("NO. DE SINIESTRO")
-        Estatus = st.selectbox(
-            "ESTATUS",
+    # =====================================================
+    #                REGISTRAR SINIESTRO
+    # =====================================================
+    if opcion == "Registrar siniestro":
+
+        st.header("Registro nuevo siniestro")
+
+        with st.form("Formulario Alta"):
+
+            Siniestro = st.text_input("NO. DE SINIESTRO")
+            Estatus = st.selectbox(
+                "ESTATUS",
+                [
+                    "ALTA FOLIO",
+                    "CONTACTO PENDIENTE DE CARGA",
+                    "PENDIENTE DE CONTACTO",
+                    "PENDIENTE VALIDACIÓN DIGITAL",
+                    "REPROCESO EN VALIDACIÓN DIGITAL",
+                    "PAGADO"
+                ]
+            )
+            Correo = st.text_input("CORREO ELECTRÓNICO")
+            Usuario = st.text_input("USUARIO (interno)")
+            Comentario = st.text_area("Comentario")
+
+            archivos = st.file_uploader(
+                "Subir documentos",
+                type=["pdf", "jpg", "jpeg", "png", "xlsx", "xls", "docx"],
+                accept_multiple_files=True
+            )
+
+            enviado = st.form_submit_button("Guardar")
+
+        # ---------- VALIDACIONES ----------
+        errores = []
+
+        if not Siniestro:
+            errores.append("El número de siniestro es obligatorio.")
+        if not Usuario:
+            errores.append("El usuario es obligatorio.")
+
+        email_regex = r"^[\w\.-]+@[\w\.-]+\.\w+$"
+        if Correo and not re.match(email_regex, Correo):
+            errores.append("El correo no tiene un formato válido.")
+
+        if enviado:
+
+            if errores:
+                st.error("Revisa:\n\n- " + "\n- ".join(errores))
+            else:
+                # 1️⃣ Crear carpeta
+                nombre_carpeta = f"SINIESTRO_{Siniestro}"
+                carpeta_id = obtener_o_crear_carpeta(nombre_carpeta, drive_service)
+                carpeta_link = f"https://drive.google.com/drive/folders/{carpeta_id}"
+
+                # 2️⃣ Subir archivos
+                links_archivos = []
+                if archivos:
+                    for archivo in archivos:
+                        archivo_id = subir_archivo_drive(
+                            archivo.name,
+                            archivo.read(),
+                            archivo.type,
+                            carpeta_id,
+                            drive_service
+                        )
+                        links_archivos.append(
+                            f"https://drive.google.com/file/d/{archivo_id}/view"
+                        )
+
+                # 3️⃣ Guardar info
+                sheet_form.append_row([
+                    Siniestro,
+                    Estatus,
+                    datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                    Usuario,
+                    Comentario,
+                    Correo,
+                    carpeta_link
+                ])
+
+                st.success("Datos guardados correctamente")
+
+    # =====================================================
+    #                MODIFICAR SINIESTRO
+    # =====================================================
+    elif opcion == "Modificar siniestro":
+
+        st.header("Modificar información de un siniestro")
+
+        datos = sheet_form.get_all_records()
+        df = pd.DataFrame(datos)
+
+        siniestros = df["Siniestro"].unique()
+
+        seleccion = st.selectbox("Seleccione el siniestro:", siniestros)
+
+        registro = df[df["Siniestro"] == seleccion].iloc[0]
+
+        st.write("Datos actuales:")
+        st.write(registro)
+
+        nuevo_estatus = st.selectbox(
+            "Nuevo estatus:",
             [
                 "ALTA FOLIO",
                 "CONTACTO PENDIENTE DE CARGA",
@@ -157,86 +262,24 @@ def vista_capturista():
                 "PENDIENTE VALIDACIÓN DIGITAL",
                 "REPROCESO EN VALIDACIÓN DIGITAL",
                 "PAGADO"
-            ]
+            ],
+            index=[
+                "ALTA FOLIO",
+                "CONTACTO PENDIENTE DE CARGA",
+                "PENDIENTE DE CONTACTO",
+                "PENDIENTE VALIDACIÓN DIGITAL",
+                "REPROCESO EN VALIDACIÓN DIGITAL",
+                "PAGADO"
+            ].index(registro["Estatus"])
         )
-        Correo = st.text_input("CORREO ELECTRÓNICO")
-        Usuario = st.text_input("USUARIO (interno)")
-        Comentario = st.text_area("Comentario")
 
-        archivos = st.file_uploader(
-            "Subir documentos",
-            type=["pdf", "jpg", "jpeg", "png", "xlsx", "xls", "docx"],
-            accept_multiple_files=True
-        )
+        if st.button("Actualizar"):
 
-        enviado = st.form_submit_button("Guardar")
+            fila = df.index[df["Siniestro"] == seleccion][0] + 2  # +2 por encabezado y 1-index
 
-    # ---------- VALIDACIONES ----------
-    errores = []
+            sheet_form.update_cell(fila, 2, nuevo_estatus)
 
-    if not Siniestro:
-        errores.append("El número de siniestro es obligatorio.")
-    if not Usuario:
-        errores.append("El usuario es obligatorio.")
-
-    email_regex = r"^[\w\.-]+@[\w\.-]+\.\w+$"
-    if Correo and not re.match(email_regex, Correo):
-        errores.append("El correo no tiene un formato válido.")
-
-    # ---------- GUARDAR DATOS ----------
-    if enviado:
-
-        if errores:
-            st.error("Revisa:\n\n- " + "\n- ".join(errores))
-        else:
-            # 1️⃣ Crear carpeta del siniestro
-            nombre_carpeta = f"SINIESTRO_{Siniestro}"
-
-            carpeta_id = obtener_o_crear_carpeta(
-                nombre_carpeta,
-                drive_service
-            )
-
-            carpeta_link = f"https://drive.google.com/drive/folders/{carpeta_id}"
-
-            # 2️⃣ Subir archivos
-            links_archivos = []
-
-            if archivos:
-                for archivo in archivos:
-                    archivo_id = subir_archivo_drive(
-                        archivo.name,
-                        archivo.read(),
-                        archivo.type,
-                        carpeta_id,
-                        drive_service
-                    )
-                    links_archivos.append(
-                        f"https://drive.google.com/file/d/{archivo_id}/view"
-                    )
-
-            links_texto = ", ".join(links_archivos)
-
-            # 3️⃣ Guardar en hoja
-            sheet_form.append_row([
-                Siniestro,
-                Estatus,
-                datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-                Usuario,
-                Comentario,
-                Correo,
-                carpeta_link
-            ])
-
-            st.success("Datos guardados correctamente")
-
-    # ---------- MOSTRAR DATOS ----------
-    st.subheader("Datos actuales en la hoja")
-
-    datos = sheet_form.get_all_records()
-    df = pd.DataFrame(datos)
-
-    st.dataframe(df)
+            st.success("Estatus actualizado correctamente")
 
 
 # =======================================================
@@ -275,4 +318,4 @@ if st.sidebar.button("Cerrar sesión ❌"):
 if st.session_state["ROL"] == "ADMINISTRADOR":
     vista_admin()
 else:
-    vista_capturista()
+    vista_liquidador()
