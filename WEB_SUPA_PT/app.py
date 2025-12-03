@@ -143,7 +143,6 @@ def vista_liquidador():
 
     st.title("Panel Liquidador")
 
-    # Selector lateral
     opcion = st.sidebar.radio(
         "Seleccione una sección:",
         ["Registrar siniestro", "Modificar siniestro"]
@@ -165,99 +164,97 @@ def vista_liquidador():
                 "🚗 Datos del vehículo"
             ])
 
-            # -------------------------------------------------------------------------
-            # 1) DATOS DEL SINIESTRO
-            # -------------------------------------------------------------------------
+            # ---------------------- DATOS SINIESTRO -------------------------
             with tabs[0]:
                 st.subheader("Datos del siniestro")
 
-                Siniestro = st.text_input("Número de siniestro")
-                Correlativo = st.text_input("Correlativo")
-                FechaSiniestro = st.date_input("Fecha del siniestro")
-                Lugar = st.text_input("Lugar del siniestro")
+                Siniestro = st.text_input("Número de siniestro", key="siniestro_num")
+                Correlativo = st.text_input("Correlativo", key="siniestro_correl")
+                FechaSiniestro = st.date_input("Fecha del siniestro", key="siniestro_fecha")
+                Lugar = st.text_input("Lugar del siniestro", key="siniestro_lugar")
                 Medio = st.selectbox(
                     "Medio de asignación",
-                    ["Call center", "PP", "Otro"]
+                    ["Call center", "PP", "Otro"],
+                    key="siniestro_medio"
                 )
 
-            # -------------------------------------------------------------------------
-            # 2) DATOS DEL ASEGURADO
-            # -------------------------------------------------------------------------
+            # ---------------------- DATOS ASEGURADO -------------------------
             with tabs[1]:
                 st.subheader("Datos del asegurado")
 
-                Asegurado_Nombre = st.text_input("Nombre del asegurado")
-                Asegurado_Rut = st.text_input("RUT del asegurado")
-                Asegurado_Tipo = st.selectbox("Tipo de persona (asegurado)", ["Natural", "Jurídica"])
-                Asegurado_Telefono = st.text_input("Teléfono")
-                Asegurado_Correo = st.text_input("Correo electrónico")
-                Asegurado_Direccion = st.text_input("Dirección")
+                Asegurado_Nombre = st.text_input("Nombre del asegurado", key="aseg_nombre")
+                Asegurado_Rut = st.text_input("RUT del asegurado", key="aseg_rut")
+                Asegurado_Tipo = st.selectbox(
+                    "Tipo de persona (asegurado)",
+                    ["Natural", "Jurídica"],
+                    key="aseg_tipo"
+                )
+                Asegurado_Telefono = st.text_input("Teléfono", key="aseg_tel")
+                Asegurado_Correo = st.text_input("Correo electrónico", key="aseg_correo")
+                Asegurado_Direccion = st.text_input("Dirección", key="aseg_direccion")
 
-            # -------------------------------------------------------------------------
-            # 3) DATOS DEL PROPIETARIO
-            # -------------------------------------------------------------------------
+            # ---------------------- DATOS PROPIETARIO -------------------------
             with tabs[2]:
                 st.subheader("Datos del propietario")
 
-                Propietario_Nombre = st.text_input("Nombre del propietario")
-                Propietario_Rut = st.text_input("RUT")
-                Propietario_Tipo = st.selectbox("Tipo de persona (propietario)", ["Natural", "Jurídica"])
-                Propietario_Telefono = st.text_input("Teléfono")
-                Propietario_Correo = st.text_input("Correo electrónico")
-                Propietario_Direccion = st.text_input("Dirección")
+                Propietario_Nombre = st.text_input("Nombre", key="prop_nombre")
+                Propietario_Rut = st.text_input("RUT", key="prop_rut")
+                Propietario_Tipo = st.selectbox(
+                    "Tipo de persona (propietario)",
+                    ["Natural", "Jurídica"],
+                    key="prop_tipo"
+                )
+                Propietario_Telefono = st.text_input("Teléfono", key="prop_tel")
+                Propietario_Correo = st.text_input("Correo electrónico", key="prop_correo")
+                Propietario_Direccion = st.text_input("Dirección", key="prop_direccion")
 
-            # -------------------------------------------------------------------------
-            # 4) DATOS DEL VEHÍCULO
-            # -------------------------------------------------------------------------
+            # ---------------------- DATOS VEHÍCULO -------------------------
             with tabs[3]:
                 st.subheader("Datos del vehículo")
 
-                Marca = st.text_input("Marca")
-                Submarca = st.text_input("Submarca")
-                Version = st.text_input("Versión")
-                AñoModelo = st.number_input("Año/Modelo", min_value=1900, max_value=2050, step=1)
-                Serie = st.text_input("Número de serie")
-                Motor = st.text_input("Motor")
-                Patente = st.text_input("Patente")
+                Marca = st.text_input("Marca", key="veh_marca")
+                Submarca = st.text_input("Submarca", key="veh_submarca")
+                Version = st.text_input("Versión", key="veh_version")
+                AñoModelo = st.number_input("Año/Modelo", min_value=1900, max_value=2050, key="veh_anio")
+                Serie = st.text_input("Número de serie", key="veh_serie")
+                Motor = st.text_input("Motor", key="veh_motor")
+                Patente = st.text_input("Patente", key="veh_patente")
 
                 archivos = st.file_uploader(
-                    "Subir documentos (opcional)",
+                    "Subir documentos",
                     type=["pdf", "jpg", "jpeg", "png", "xlsx", "xls", "docx"],
-                    accept_multiple_files=True
+                    accept_multiple_files=True,
+                    key="veh_archivos"
                 )
 
+            # >>>>>>>> AQUÍ VA EL SUBMIT BUTTON <<<<<<<<
             enviado = st.form_submit_button("Guardar")
 
-        # ============================= VALIDACIONES =============================
-        errores = []
-
-        if not Siniestro:
-            errores.append("El número de siniestro es obligatorio.")
-
-        email_regex = r"^[\w\.-]+@[\w\.-]+\.\w+$"
-        if Asegurado_Correo and not re.match(email_regex, Asegurado_Correo):
-            errores.append("El correo del asegurado no es válido.")
-
+        # ======================= VALIDACIONES =============================
         if enviado:
+            errores = []
+
+            if not Siniestro:
+                errores.append("El número de siniestro es obligatorio.")
+
+            email_regex = r"^[\w\.-]+@[\w\.-]+\.\w+$"
+            if Asegurado_Correo and not re.match(email_regex, Asegurado_Correo):
+                errores.append("El correo del asegurado no es válido.")
 
             if errores:
-                st.error("Revisa lo siguiente:\n\n- " + "\n- ".join(errores))
+                st.error("Revisa lo siguiente:\n- " + "\n- ".join(errores))
                 return
 
-            # Datos del usuario actual
+            # Usuario login desde session_state
             Usuario_Login = st.session_state["USUARIO"]
             Liquidador_Nombre = st.session_state["LIQUIDADOR"]
-
-            # FECHA Y HORA DEL MOVIMIENTO
             FechaMovimiento = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
-            # -----------------------------------------------------------
-            # CREAR CARPETA EN DRIVE
-            # -----------------------------------------------------------
+            # Crear carpeta en drive
             carpeta_id = obtener_o_crear_carpeta(f"SINIESTRO_{Siniestro}", drive_service)
             carpeta_link = f"https://drive.google.com/drive/folders/{carpeta_id}"
 
-            # SUBIR ARCHIVOS
+            # Subir archivos
             links_archivos = []
             if archivos:
                 for archivo in archivos:
@@ -270,9 +267,7 @@ def vista_liquidador():
                     )
                     links_archivos.append(f"https://drive.google.com/file/d/{archivo_id}/view")
 
-            # -----------------------------------------------------------
-            # GUARDAR REGISTRO EN GOOGLE SHEETS
-            # -----------------------------------------------------------
+            # Guardar en Sheets
             sheet_form.append_row([
                 Siniestro,
                 Correlativo,
@@ -298,44 +293,14 @@ def vista_liquidador():
                 Serie,
                 Motor,
                 Patente,
-                Usuario_Login,        # Usuario que registra
-                Liquidador_Nombre,    # Nombre liquidador que registra
-                FechaMovimiento,       # Fecha de movimiento
-                carpeta_link,          # Carpeta del siniestro
-                ", ".join(links_archivos) if links_archivos else ""
+                Usuario_Login,
+                Liquidador_Nombre,
+                FechaMovimiento,
+                carpeta_link,
+                ", ".join(links_archivos)
             ])
 
             st.success("✔ Siniestro registrado correctamente.")
-
-
-    # =====================================================================================
-    #                                MODIFICAR SINIESTRO
-    # =====================================================================================
-    elif opcion == "Modificar siniestro":
-
-        st.header("Modificar siniestro")
-
-        datos = sheet_form.get_all_records()
-        df = pd.DataFrame(datos)
-
-        if df.empty:
-            st.warning("No hay registros aún.")
-            return
-
-        siniestros = df["Siniestro"].unique()
-
-        seleccion = st.selectbox("Seleccione un siniestro:", siniestros)
-
-        registro = df[df["Siniestro"] == seleccion].iloc[0]
-        st.write("Datos actuales:", registro)
-
-        nuevo_estatus = st.text_input("Nuevo estatus")
-
-        if st.button("Actualizar"):
-            fila = df.index[df["Siniestro"] == seleccion][0] + 2
-            sheet_form.update_cell(fila, 2, nuevo_estatus)
-            st.success("Estatus actualizado correctamente.")
-
 
 # =======================================================
 #                VISTA ADMINISTRADOR
