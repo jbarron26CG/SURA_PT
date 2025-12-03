@@ -153,130 +153,183 @@ def vista_liquidador():
     #                REGISTRAR SINIESTRO
     # =====================================================
     if opcion == "Registrar siniestro":
+        # ===== CSS PARA PESTAÑAS PROFESIONALES =====
+        st.markdown("""
+        <style>
+        .tabs-container {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
 
-        st.header("Registro nuevo siniestro")
+        .tab-button {
+            padding: 10px 15px;
+            border-radius: 8px;
+            background-color: #f0f2f6;
+            border: 1px solid #d6d6d6;
+            cursor: pointer;
+            font-weight: 600;
+            transition: 0.2s;
+        }
 
-        with st.form("form_siniestro"):
+        .tab-button:hover {
+            background-color: #e2e6ea;
+        }
 
-            # =============================
-            #   1) DATOS DEL SINIESTRO
-            # =============================
-            with st.expander("📁 Datos del siniestro", expanded=True):
-                Siniestro = st.text_input("Número de siniestro")
-                Estatus = st.selectbox(
-                    "Estatus",
-                    [
-                        "ALTA FOLIO",
-                        "CONTACTO PENDIENTE DE CARGA",
-                        "PENDIENTE DE CONTACTO",
-                        "PENDIENTE VALIDACIÓN DIGITAL",
-                        "REPROCESO EN VALIDACIÓN DIGITAL",
-                        "PAGADO"
-                    ]
+        .tab-active {
+            background-color: #4A90E2 !important;
+            color: white !important;
+            border-color: #4A90E2 !important;
+        }
+        </style>
+        """, unsafe_allow_html=True)
+
+        # ===== CONTROL DE PESTAÑAS =====
+        if "tab_actual" not in st.session_state:
+            st.session_state.tab_actual = "siniestro"
+
+        def cambiar_tab(nombre):
+            st.session_state.tab_actual = nombre
+
+        st.markdown('<div class="tabs-container">', unsafe_allow_html=True)
+
+        col1, col2, col3, col4 = st.columns(4)
+
+        with col1:
+            if st.button("Datos del siniestro",
+                        key="tab_siniestro",
+                        help="Registrar datos del siniestro"):
+                cambiar_tab("siniestro")
+
+        with col2:
+            if st.button("Datos del asegurado",
+                        key="tab_asegurado"):
+                cambiar_tab("asegurado")
+
+        with col3:
+            if st.button("Datos del propietario",
+                        key="tab_propietario"):
+                cambiar_tab("propietario")
+
+        with col4:
+            if st.button("Datos del vehículo",
+                        key="tab_vehiculo"):
+                cambiar_tab("vehiculo")
+
+        st.markdown('</div>', unsafe_allow_html=True)
+
+        if st.session_state.tab_actual == "siniestro":
+            st.markdown("### 🟥 Datos del siniestro")
+
+            col1, col2 = st.columns(2)
+
+            with col1:
+                numero_siniestro = st.text_input("Número de siniestro")
+                correlativo = st.text_input("Correlativo")
+                fecha_siniestro = st.date_input("Fecha del siniestro")
+
+            with col2:
+                lugar_siniestro = st.text_input("Lugar del siniestro")
+                medio_asignacion = st.selectbox(
+                    "Medio de asignación",
+                    ["Call center", "PP", "Otro"]
                 )
-                FechaSiniestro = st.date_input("Fecha del siniestro")
-                Comentario = st.text_area("Comentario")
 
-            # =============================
-            #   2) DATOS DEL ASEGURADO
-            # =============================
-            with st.expander("👤 Datos del asegurado"):
-                Asegurado_Nombre = st.text_input("Nombre del asegurado")
-                Asegurado_Telefono = st.text_input("Teléfono del asegurado")
-                Asegurado_Correo = st.text_input("Correo del asegurado")
+        if st.session_state.tab_actual == "asegurado":
+            st.markdown("### 🟦 Datos del asegurado")
 
-            # =============================
-            #   3) DATOS DEL PROPIETARIO
-            # =============================
-            with st.expander("🏠 Datos del propietario"):
-                Propietario_Nombre = st.text_input("Nombre del propietario")
-                Propietario_Telefono = st.text_input("Teléfono del propietario")
-                Propietario_Correo = st.text_input("Correo del propietario")
+            col1, col2 = st.columns(2)
 
-            # =============================
-            #   4) DATOS DEL VEHÍCULO
-            # =============================
-            with st.expander("🚗 Datos del vehículo"):
-                Marca = st.text_input("Marca")
-                Modelo = st.text_input("Modelo")
-                Año = st.number_input("Año", min_value=1900, max_value=2050, step=1)
-                Placas = st.text_input("Placas")
-                Serie = st.text_input("Número de serie")
+            with col1:
+                nombre_ase = st.text_input("Nombre")
+                rut_ase = st.text_input("RUT")
+                tipo_persona_ase = st.selectbox("Tipo de persona", ["Física", "Moral"])
 
-            # =============================
-            #   DOCUMENTOS
-            # =============================
-            with st.expander("📎 Documentos"):
-                archivos = st.file_uploader(
-                    "Subir documentos",
-                    type=["pdf", "jpg", "jpeg", "png", "xlsx", "xls", "docx"],
-                    accept_multiple_files=True
-                )
+            with col2:
+                telefono_ase = st.text_input("Teléfono")
+                correo_ase = st.text_input("Correo electrónico")
+                direccion_ase = st.text_input("Dirección")
+        if st.session_state.tab_actual == "propietario":
+            st.markdown("### 🟩 Datos del propietario")
 
-            enviado = st.form_submit_button("Guardar")
+            col1, col2 = st.columns(2)
+
+            with col1:
+                nombre_prop = st.text_input("Nombre")
+                rut_prop = st.text_input("RUT")
+                tipo_persona_prop = st.selectbox("Tipo de persona", ["Física", "Moral"])
+
+            with col2:
+                telefono_prop = st.text_input("Teléfono")
+                correo_prop = st.text_input("Correo electrónico")
+                direccion_prop = st.text_input("Dirección")
+        
+        if st.session_state.tab_actual == "vehiculo":
+            st.markdown("### 🟨 Datos del vehículo")
+
+            col1, col2, col3 = st.columns(3)
+
+            with col1:
+                marca = st.text_input("Marca")
+                submarca = st.text_input("Submarca")
+                version = st.text_input("Versión")
+
+            with col2:
+                anio_modelo = st.number_input("Año / Modelo", 1980, 2030, 2023)
+                numero_serie = st.text_input("Número de serie")
+                motor = st.text_input("Motor")
+
+            with col3:
+                patente = st.text_input("Patente")
+        
+        if st.button("Guardar registro ✅"):
+            # VALIDACIÓN SIMPLE
+            if not numero_siniestro:
+                st.error("Debes ingresar el número de siniestro.")
+                st.stop()
+
+            # Construir registro para Google Sheets
+            registro = [
+                numero_siniestro,
+                correlativo,
+                str(fecha_siniestro),
+                lugar_siniestro,
+                medio_asignacion,
+
+                nombre_ase,
+                rut_ase,
+                tipo_persona_ase,
+                telefono_ase,
+                correo_ase,
+                direccion_ase,
+
+                nombre_prop,
+                rut_prop,
+                tipo_persona_prop,
+                telefono_prop,
+                correo_prop,
+                direccion_prop,
+
+                marca,
+                submarca,
+                version,
+                anio_modelo,
+                numero_serie,
+                motor,
+                patente,
+
+                st.session_state["USUARIO"],   # ← Guardado automático desde login
+                st.session_state["NOMBRE"],    # ← Si lo agregaste en login
+                datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+            ]
+
+            # Guardar en Google Sheets
+            sheet_form.append_row(registro)
+
+            st.success("Registro guardado correctamente 🎉")
 
 
-        # ---------- VALIDACIONES ----------
-        errores = []
 
-        if not Siniestro:
-            errores.append("El número de siniestro es obligatorio.")
-
-        email_regex = r"^[\w\.-]+@[\w\.-]+\.\w+$"
-        if Asegurado_Correo and not re.match(email_regex, Asegurado_Correo):
-            errores.append("El correo no tiene un formato válido.")
-
-        if enviado:
-            Correo_liquidador = st.session_state["USUARIO"]
-            liquidador = st.session_state["LIQUIDADOR"]
-            if errores:
-                st.error("Revisa:\n\n- " + "\n- ".join(errores))
-            else:
-                # 1️⃣ Crear carpeta
-                nombre_carpeta = f"SINIESTRO_{Siniestro}"
-                carpeta_id = obtener_o_crear_carpeta(nombre_carpeta, drive_service)
-                carpeta_link = f"https://drive.google.com/drive/folders/{carpeta_id}"
-
-                # 2️⃣ Subir archivos
-                links_archivos = []
-                if archivos:
-                    for archivo in archivos:
-                        archivo_id = subir_archivo_drive(
-                            archivo.name,
-                            archivo.read(),
-                            archivo.type,
-                            carpeta_id,
-                            drive_service
-                        )
-                        links_archivos.append(
-                            f"https://drive.google.com/file/d/{archivo_id}/view"
-                        )
-
-                # 3️⃣ Guardar info
-                sheet_form.append_row([
-                    Siniestro,
-                    Estatus,
-                    datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-                    Comentario,
-                    Asegurado_Correo,
-                    Correo_liquidador,
-                    liquidador,
-                    FechaSiniestro.strftime("%Y-%m-%d"),
-                    Asegurado_Nombre,
-                    Asegurado_Telefono,
-                    Asegurado_Correo,
-                    Propietario_Nombre,
-                    Propietario_Telefono,
-                    Propietario_Correo,
-                    Marca,
-                    Modelo,
-                    Año,
-                    Placas,
-                    Serie,
-                    carpeta_link
-                ])
-
-                st.success("Datos guardados correctamente")
 
     # =====================================================
     #                MODIFICAR SINIESTRO
