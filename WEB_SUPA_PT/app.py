@@ -231,76 +231,77 @@ def vista_liquidador():
             enviado = st.form_submit_button("Guardar")
 
         # ======================= VALIDACIONES =============================
-        if enviado:
-            errores = []
+            if enviado:
+                errores = []
 
-            if not Siniestro:
-                errores.append("El número de siniestro es obligatorio.")
+                if not Siniestro:
+                    errores.append("El número de siniestro es obligatorio.")
 
-            email_regex = r"^[\w\.-]+@[\w\.-]+\.\w+$"
-            if Asegurado_Correo and not re.match(email_regex, Asegurado_Correo):
-                errores.append("El correo del asegurado no es válido.")
+                email_regex = r"^[\w\.-]+@[\w\.-]+\.\w+$"
+                if Asegurado_Correo and not re.match(email_regex, Asegurado_Correo):
+                    errores.append("El correo del asegurado no es válido.")
 
-            if errores:
-                st.error("Revisa lo siguiente:\n- " + "\n- ".join(errores))
-                return
+                if errores:
+                    st.error("Revisa lo siguiente:\n- " + "\n- ".join(errores))
+                    return
 
-            # Usuario login desde session_state
-            Usuario_Login = st.session_state["USUARIO"]
-            Liquidador_Nombre = st.session_state["LIQUIDADOR"]
-            FechaMovimiento = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                # Usuario login desde session_state
+                Usuario_Login = st.session_state["USUARIO"]
+                Liquidador_Nombre = st.session_state["LIQUIDADOR"]
+                FechaMovimiento = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
-            # Crear carpeta en drive
-            carpeta_id = obtener_o_crear_carpeta(f"SINIESTRO_{Siniestro}", drive_service)
-            carpeta_link = f"https://drive.google.com/drive/folders/{carpeta_id}"
+                # Crear carpeta en drive
+                carpeta_id = obtener_o_crear_carpeta(f"SINIESTRO_{Siniestro}", drive_service)
+                carpeta_link = f"https://drive.google.com/drive/folders/{carpeta_id}"
 
-            # Subir archivos
-            links_archivos = []
-            if archivos:
-                for archivo in archivos:
-                    archivo_id = subir_archivo_drive(
-                        archivo.name,
-                        archivo.read(),
-                        archivo.type,
-                        carpeta_id,
-                        drive_service
-                    )
-                    links_archivos.append(f"https://drive.google.com/file/d/{archivo_id}/view")
+                # Subir archivos
+                links_archivos = []
+                if archivos:
+                    for archivo in archivos:
+                        archivo_id = subir_archivo_drive(
+                            archivo.name,
+                            archivo.read(),
+                            archivo.type,
+                            carpeta_id,
+                            drive_service
+                        )
+                        links_archivos.append(f"https://drive.google.com/file/d/{archivo_id}/view")
 
-            # Guardar en Sheets
-            sheet_form.append_row([
-                Siniestro,
-                Correlativo,
-                FechaSiniestro.strftime("%Y-%m-%d"),
-                Lugar,
-                Medio,
-                Asegurado_Nombre,
-                Asegurado_Rut,
-                Asegurado_Tipo,
-                Asegurado_Telefono,
-                Asegurado_Correo,
-                Asegurado_Direccion,
-                Propietario_Nombre,
-                Propietario_Rut,
-                Propietario_Tipo,
-                Propietario_Telefono,
-                Propietario_Correo,
-                Propietario_Direccion,
-                Marca,
-                Submarca,
-                Version,
-                AñoModelo,
-                Serie,
-                Motor,
-                Patente,
-                Usuario_Login,
-                Liquidador_Nombre,
-                FechaMovimiento,
-                carpeta_link,
-                ", ".join(links_archivos)
-            ])
+                # Guardar en Sheets
+                sheet_form.append_row([
+                    Siniestro,
+                    Correlativo,
+                    FechaSiniestro.strftime("%Y-%m-%d"),
+                    Lugar,
+                    Medio,
+                    Marca,
+                    Submarca,
+                    Version,
+                    AñoModelo,
+                    Serie,
+                    Motor,
+                    Patente,
+                    datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                    "ALTA SINIESTRO",
+                    Asegurado_Nombre,
+                    Asegurado_Rut,
+                    Asegurado_Tipo,
+                    Asegurado_Telefono,
+                    Asegurado_Correo,
+                    Asegurado_Direccion,
+                    Propietario_Nombre,
+                    Propietario_Rut,
+                    Propietario_Tipo,
+                    Propietario_Telefono,
+                    Propietario_Correo,
+                    Propietario_Direccion,
+                    Liquidador_Nombre,
+                    Usuario_Login,
+                    carpeta_link,
+                    ", ".join(links_archivos)
+                ])
 
-            st.success("✔ Siniestro registrado correctamente.")
+                st.success("✔ Siniestro registrado correctamente.")
 
 # =======================================================
 #                VISTA ADMINISTRADOR
