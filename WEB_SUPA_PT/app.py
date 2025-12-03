@@ -228,7 +228,7 @@ def vista_liquidador():
                 )
 
             # >>>>>>>> AQUÍ VA EL SUBMIT BUTTON <<<<<<<<
-            enviado = st.form_submit_button("Guardar")
+                enviado = st.form_submit_button("Guardar")
 
         # ======================= VALIDACIONES =============================
             if enviado:
