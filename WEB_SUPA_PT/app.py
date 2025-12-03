@@ -7,6 +7,7 @@ import io
 import gspread
 from datetime import datetime
 import re
+from zoneinfo import ZoneInfo
 
 # =======================================================
 #             CONFIGURAR CREDENCIALES
@@ -281,7 +282,7 @@ def vista_liquidador():
                     Serie,
                     Motor,
                     Patente,
-                    datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                    datetime.now(ZoneInfo("America/Mexico_City")).strftime("%Y-%m-%d %H:%M:%S"),
                     "ALTA SINIESTRO",
                     Asegurado_Nombre,
                     Asegurado_Rut,
