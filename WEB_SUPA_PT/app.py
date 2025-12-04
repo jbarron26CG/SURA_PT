@@ -136,6 +136,197 @@ def login(df):
 
         st.error("Credenciales incorrectas")
 
+def vista_modificar_siniestro():
+    st.header("🔧 Modificar Siniestro")
+
+    # -------------------------------------------------------
+    # LEER LA BASE COMPLETA
+    # -------------------------------------------------------
+    
+    data = sheet_form.get_all_records()
+
+    if not data:
+        st.warning("No hay siniestros registrados.")
+        return
+
+    df = pd.DataFrame(data)
+
+    # -------------------------------------------------------
+    # BUSCADOR
+    # -------------------------------------------------------
+    st.subheader("🔍 Buscar siniestro")
+    search = st.text_input("Ingrese número de siniestro o nombre del asegurado")
+
+    if search.strip() == "":
+        st.info("Escribe algo para buscar.")
+        return
+
+    # Filtra por coincidencias
+    results = df[
+        df["Número de siniestro"].astype(str).str.contains(search, case=False, na=False) |
+        df["Asegurado_Nombre"].astype(str).str.contains(search, case=False, na=False)
+    ]
+
+    if results.empty:
+        st.warning("No se encontraron siniestros.")
+        return
+
+    # Selección de siniestro
+    st.subheader("Resultados de búsqueda")
+    selected = st.selectbox(
+        "Seleccione un siniestro",
+        results["Número de siniestro"].unique()
+    )
+
+    if selected is None:
+        return
+
+    st.divider()
+
+    # -------------------------------------------------------
+    # CARGAR DATOS DEL SINIESTRO SELECCIONADO
+    # -------------------------------------------------------
+    siniestro_df = df[df["Número de siniestro"] == selected]
+    siniestro_data = siniestro_df.iloc[0]  # Primera fila
+
+    st.subheader(f"📝 Modificar datos del siniestro {selected}")
+
+    with st.form("form_modificar", clear_on_submit=False):
+
+        # --------------------------
+        # SECCIÓN: DATOS DEL SINIESTRO
+        # --------------------------
+        st.markdown("### 📌 Datos del Siniestro")
+        col1, col2 = st.columns(2)
+        with col1:
+            correlativo = st.text_input("Correlativo", siniestro_data["Correlativo"])
+            fecha_siniestro = st.date_input(
+                "Fecha de siniestro",
+                value=pd.to_datetime(siniestro_data["Fecha_siniestro"]).date()
+            )
+            lugar_siniestro = st.text_input("Lugar de siniestro", siniestro_data["Lugar_siniestro"])
+        with col2:
+            medio_asignacion = st.selectbox(
+                "Medio de asignación",
+                ["Call center", "PP", "Otro"],
+                index=["Call center", "PP", "Otro"].index(siniestro_data["Medio_asignacion"])
+            )
+
+        # --------------------------
+        # SECCIÓN: ASEGURADO
+        # --------------------------
+        st.markdown("### 👤 Datos del Asegurado")
+        colA1, colA2 = st.columns(2)
+        with colA1:
+            aseg_nombre = st.text_input("Nombre", siniestro_data["Asegurado_Nombre"])
+            aseg_rut = st.text_input("RUT", siniestro_data["Asegurado_Rut"])
+            aseg_persona = st.text_input("Tipo de persona", siniestro_data["Asegurado_Tipo"])
+        with colA2:
+            aseg_tel = st.text_input("Teléfono", siniestro_data["Asegurado_Telefono"])
+            aseg_mail = st.text_input("Correo", siniestro_data["Asegurado_Correo"])
+            aseg_dir = st.text_input("Dirección", siniestro_data["Asegurado_Direccion"])
+
+        # --------------------------
+        # SECCIÓN: PROPIETARIO
+        # --------------------------
+        st.markdown("### 👤 Datos del Propietario")
+        colP1, colP2 = st.columns(2)
+        with colP1:
+            prop_nombre = st.text_input("Nombre propietario", siniestro_data["Propietario_Nombre"])
+            prop_rut = st.text_input("RUT propietario", siniestro_data["Propietario_Rut"])
+            prop_tipo = st.text_input("Tipo de persona", siniestro_data["Propietario_Tipo"])
+        with colP2:
+            prop_tel = st.text_input("Teléfono", siniestro_data["Propietario_Telefono"])
+            prop_mail = st.text_input("Correo", siniestro_data["Propietario_Correo"])
+            prop_dir = st.text_input("Dirección", siniestro_data["Propietario_Direccion"])
+
+        # --------------------------
+        # SECCIÓN: VEHÍCULO
+        # --------------------------
+        st.markdown("### 🚗 Datos del Vehículo")
+        colV1, colV2 = st.columns(2)
+        with colV1:
+            marca = st.text_input("Marca", siniestro_data["Vehiculo_Marca"])
+            submarca = st.text_input("Submarca", siniestro_data["Vehiculo_Submarca"])
+            version = st.text_input("Versión", siniestro_data["Vehiculo_Version"])
+        with colV2:
+            anio = st.text_input("Año/Modelo", siniestro_data["Vehiculo_Anio"])
+            serie = st.text_input("Número de serie", siniestro_data["Vehiculo_Serie"])
+            motor = st.text_input("Motor", siniestro_data["Vehiculo_Motor"])
+            patente = st.text_input("Patente", siniestro_data["Vehiculo_Patente"])
+
+        # --------------------------
+        # SECCIÓN: ESTATUS
+        # --------------------------
+        st.markdown("### 🔄 Estatus")
+
+        nuevo_status = st.selectbox(
+            "Actualizar estatus",
+            ["", "Asignado", "En proceso", "Finalizado", "Cancelado"]
+        )
+
+        comentario_status = st.text_area("Comentario / detalle (opcional)")
+
+        submitted = st.form_submit_button("💾 Guardar cambios")
+
+    # -------------------------------------------------------
+    # PROCESAR ACTUALIZACIÓN
+    # -------------------------------------------------------
+    if submitted:
+
+        # Preparar datos actualizados
+        updated_row = {
+            "Correlativo": correlativo,
+            "Fecha_siniestro": str(fecha_siniestro),
+            "Lugar_siniestro": lugar_siniestro,
+            "Medio_asignacion": medio_asignacion,
+            "Asegurado_Nombre": aseg_nombre,
+            "Asegurado_Rut": aseg_rut,
+            "Asegurado_Tipo": aseg_persona,
+            "Asegurado_Telefono": aseg_tel,
+            "Asegurado_Correo": aseg_mail,
+            "Asegurado_Direccion": aseg_dir,
+            "Propietario_Nombre": prop_nombre,
+            "Propietario_Rut": prop_rut,
+            "Propietario_Tipo": prop_tipo,
+            "Propietario_Telefono": prop_tel,
+            "Propietario_Correo": prop_mail,
+            "Propietario_Direccion": prop_dir,
+            "Vehiculo_Marca": marca,
+            "Vehiculo_Submarca": submarca,
+            "Vehiculo_Version": version,
+            "Vehiculo_Anio": anio,
+            "Vehiculo_Serie": serie,
+            "Vehiculo_Motor": motor,
+            "Vehiculo_Patente": patente,
+        }
+
+        # Aplica cambios a TODAS las filas del siniestro
+        filas = df[df["Número de siniestro"] == selected].index.tolist()
+
+        for f in filas:
+            row_number = f + 2  # porque header es fila 1
+            col_index = 2       # columna B si A es número de siniestro
+            valores = list(updated_row.values())
+            sheet_form.update(f"B{row_number}:Z{row_number}", [valores])
+
+        # Escribir estatus histórico
+        if nuevo_status != "":
+            from datetime import datetime
+            from zoneinfo import ZoneInfo
+
+            ts = datetime.now(ZoneInfo("America/Mexico_City")).strftime("%Y-%m-%d %H:%M:%S")
+
+            sheet_form.append_row([
+                selected,
+                "", "", "", "", "", "",
+                f"STATUS: {nuevo_status}",
+                comentario_status,
+                ts
+            ])
+
+        st.success("Cambios actualizados correctamente 🎉")
+
 
 # =======================================================
 #               VISTA LIQUIDADOR
@@ -303,7 +494,8 @@ def vista_liquidador():
                 ])
 
                 st.success("✔ Siniestro registrado correctamente.")
-
+    if opcion == "Modificar siniestro":
+        vista_modificar_siniestro()
 # =======================================================
 #                VISTA ADMINISTRADOR
 # =======================================================
