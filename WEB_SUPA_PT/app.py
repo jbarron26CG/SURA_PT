@@ -136,185 +136,286 @@ def login(df):
 
         st.error("Credenciales incorrectas")
 
+
 def vista_modificar_siniestro():
+    """
+    Vista para buscar, seleccionar y modificar siniestros.
+    - Busca y muestra tabla compacta.
+    - Al seleccionar un siniestro, muestra dos tabs:
+        1) Modificar datos (afecta todas las filas del siniestro)
+        2) Agregar estatus / seguimiento (añade nueva fila)
+    """
 
     st.title("🔧 Modificar Siniestro")
 
-    # ================================
-    # CARGAR BASE
-    # ================================
-    datos = sheet_form.get_all_records()
-    df = pd.DataFrame(datos)
+    # -------------- CARGAR DATOS desde Google Sheets --------------
+    try:
+        records = sheet_form.get_all_records()
+        df = pd.DataFrame(records)
+    except Exception as e:
+        st.error(f"Error leyendo la hoja: {e}")
+        return
 
     if df.empty:
-        st.warning("No hay siniestros registrados.")
+        st.warning("No hay siniestros registrados aún.")
         return
 
-    # ================================
-    # BUSCADOR
-    # ================================
+    # Asegurar columnas clave existan
+    required_cols = [
+        "# DE SINIESTRO","CORRELATIVO","FECHA SINIESTRO","LUGAR SINIESTRO","MEDIO ASIGNACIÓN",
+        "MARCA","SUBMARCA","VERSIÓN","AÑO/MODELO","NO. SERIE","MOTOR","PATENTE",
+        "FECHA ESTATUS BITÁCORA","ESTATUS",
+        "NOMBRE ASEGURADO","RUT ASEGURADO","TIPO DE PERSONA ASEGURADO","TEL. ASEGURADO","CORREO ASEGURADO","DIRECCIÓN ASEGURADO",
+        "NOMBRE PROPIETARIO","RUT PROPIETARIO","TIPO DE PERSONA PROPIETARIO","TEL. PROPIETARIO","CORREO PROPIETARIO","DIRECCIÓN PROPIETARIO",
+        "LIQUIDADOR","CORREO LIQUIDADOR","DRIVE"
+    ]
+    missing = [c for c in required_cols if c not in df.columns]
+    if missing:
+        st.error(f"Faltan columnas en la hoja: {missing}")
+        return
+
+    # Normalizar a strings para buscar sin problemas
+    df["# DE SINIESTRO"] = df["# DE SINIESTRO"].astype(str)
+    df["PATENTE"] = df["PATENTE"].astype(str)
+    df["NOMBRE ASEGURADO"] = df["NOMBRE ASEGURADO"].astype(str)
+    df["NOMBRE PROPIETARIO"] = df["NOMBRE PROPIETARIO"].astype(str)
+
+    # -------------- BUSCADOR Y TABLA COMPACTA --------------
     st.subheader("🔍 Buscar siniestro")
-    busqueda = st.text_input("Buscar por número de siniestro, asegurado, patente o propietario")
+    buscar = st.text_input("Escribe número de siniestro, asegurado, patente o propietario", key="buscar_mod")
 
-    df_filtrado = df[
-        df.apply(lambda row:
-                 busqueda.lower() in str(row["# DE SINIESTRO"]).lower() or
-                 busqueda.lower() in str(row["NOMBRE ASEGURADO"]).lower() or
-                 busqueda.lower() in str(row["PATENTE"]).lower() or
-                 busqueda.lower() in str(row["NOMBRE PROPIETARIO"]).lower()
-                 , axis=1)
-        ] if busqueda else df
+    # Filtrado reactivo
+    if buscar:
+        filt = df[
+            df["# DE SINIESTRO"].str.contains(buscar, case=False, na=False) |
+            df["NOMBRE ASEGURADO"].str.contains(buscar, case=False, na=False) |
+            df["PATENTE"].str.contains(buscar, case=False, na=False) |
+            df["NOMBRE PROPIETARIO"].str.contains(buscar, case=False, na=False)
+        ]
+    else:
+        filt = df.copy()
 
-    lista_siniestros = sorted(df_filtrado["# DE SINIESTRO"].unique())
+    # Construir tabla compacta con la info relevante y botón seleccionar
+    st.markdown("**Resultados** (selecciona una fila para editar)")
 
-    selected = st.selectbox("Selecciona el siniestro", lista_siniestros)
+    # Columnas a mostrar
+    display_cols = ["# DE SINIESTRO", "FECHA SINIESTRO", "NOMBRE ASEGURADO", "MARCA", "AÑO/MODELO", "ESTATUS"]
 
-    if not selected:
+    # Mostrar encabezados
+    header_cols = st.columns(len(display_cols) + 1)
+    for i, c in enumerate(display_cols):
+        header_cols[i].markdown(f"**{c}**")
+    header_cols[-1].markdown("**Acción**")
+
+    selected_siniestro = None
+    # Recorrer filas filtradas (limitamos a primeras 200 para evitar UI pesada)
+    for idx, row in filt.reset_index(drop=True).head(200).iterrows():
+        cols = st.columns(len(display_cols) + 1)
+        for i, c in enumerate(display_cols):
+            cols[i].write(row.get(c, ""))
+        # botón seleccionar con key única (usar índice del dataframe original)
+        original_index = df.index[df["# DE SINIESTRO"] == row["# DE SINIESTRO"]][0]
+        if cols[-1].button("Seleccionar", key=f"sel_{int(original_index)}"):
+            selected_siniestro = row["# DE SINIESTRO"]
+            # guardar en session para persistencia si se desea
+            st.session_state["selected_siniestro"] = selected_siniestro
+            st.experimental_rerun()
+
+    # Si user ya seleccionó antes y no refrescó
+    if "selected_siniestro" in st.session_state and not selected_siniestro:
+        selected_siniestro = st.session_state["selected_siniestro"]
+
+    if not selected_siniestro:
+        st.info("Selecciona un siniestro de la lista para editar o usa el buscador.")
         return
 
-    registro = df[df["# DE SINIESTRO"] == selected].iloc[0]
+    # -------------- CARGAR FILAS DEL SINIESTRO SELECCIONADO --------------
+    sin_df = df[df["# DE SINIESTRO"] == str(selected_siniestro)].reset_index(drop=True)
+    if sin_df.empty:
+        st.error("No se encontró información del siniestro seleccionado.")
+        return
 
-    st.write("---")
+    base = sin_df.iloc[0].copy()  # referencia para rellenar campos
 
-    # ================================
-    # TABS
-    # ================================
-    tab1, tab2, tab3, tab4, tab5 = st.tabs([
-        "📝 Datos del Siniestro",
-        "👤 Datos del Asegurado",
-        "🏠 Datos del Propietario",
-        "🚗 Datos del Vehículo",
-        "📌 Estatus"
-    ])
+    st.success(f"Siniestro seleccionado: {selected_siniestro} — filas: {len(sin_df)}")
+    st.markdown("---")
 
-    # -------- TAB 1 --------
-    with tab1:
-        correlativo = st.text_input("Correlativo", registro["CORRELATIVO"])
-        fecha_siniestro = st.date_input("Fecha de siniestro")
-        lugar_siniestro = st.text_input("Lugar del siniestro", registro["LUGAR SINIESTRO"])
-        medio_asignacion = st.selectbox(
-            "Medio de asignación",
-            ["Call center", "PP", "Otro"],
-            index=["Call center", "PP", "Otro"].index(registro["MEDIO ASIGNACIÓN"]) 
-            if registro["MEDIO ASIGNACIÓN"] in ["Call center", "PP", "Otro"] else 0
-        )
+    # -------------- TABS: modificar datos / agregar estatus --------------
+    tab_datos, tab_estatus = st.tabs(["✏️ Modificar datos", "📌 Agregar estatus (seguimiento)"])
 
-    # -------- TAB 2 --------
-    with tab2:
-        aseg_nombre = st.text_input("Nombre asegurado", registro["NOMBRE ASEGURADO"])
-        aseg_rut = st.text_input("RUT asegurado", registro["RUT ASEGURADO"])
-        aseg_persona = st.selectbox(
-            "Tipo de persona",
-            ["Natural", "Jurídica"],
-            index=["Natural", "Jurídica"].index(registro["TIPO DE PERSONA ASEGURADO"])
-            if registro["TIPO DE PERSONA ASEGURADO"] in ["Natural", "Jurídica"] else 0
-        )
-        aseg_tel = st.text_input("Teléfono", registro["TEL. ASEGURADO"])
-        aseg_mail = st.text_input("Correo", registro["CORREO ASEGURADO"])
-        aseg_dir = st.text_input("Dirección", registro["DIRECCIÓN ASEGURADO"])
+    # ---------------- TAB: MODIFICAR DATOS ----------------
+    with tab_datos:
+        st.header("Modificar datos del siniestro (se aplicará a todas las filas)")
 
-    # -------- TAB 3 --------
-    with tab3:
-        prop_nombre = st.text_input("Nombre propietario", registro["NOMBRE PROPIETARIO"])
-        prop_rut = st.text_input("RUT propietario", registro["RUT PROPIETARIO"])
-        prop_tipo = st.selectbox(
-            "Tipo de persona",
-            ["Natural", "Jurídica"],
-            index=["Natural", "Jurídica"].index(registro["TIPO DE PERSONA PROPIETARIO"])
-            if registro["TIPO DE PERSONA PROPIETARIO"] in ["Natural", "Jurídica"] else 0
-        )
-        prop_tel = st.text_input("Teléfono", registro["TEL. PROPIETARIO"])
-        prop_mail = st.text_input("Correo", registro["CORREO PROPIETARIO"])
-        prop_dir = st.text_input("Dirección", registro["DIRECCIÓN PROPIETARIO"])
+        with st.form(f"form_modif_{selected_siniestro}", clear_on_submit=False):
+            # DATOS DEL SINIESTRO
+            st.subheader("Datos del siniestro")
+            Correlativo = st.text_input("Correlativo", value=base["CORRELATIVO"], key=f"c_corr_{selected_siniestro}")
+            # convertir FECHA SINIESTRO a date si viene en otro formato
+            try:
+                fecha_prefill = pd.to_datetime(base["FECHA SINIESTRO"], errors="coerce")
+                fecha_prefill = fecha_prefill.date() if not pd.isna(fecha_prefill) else None
+            except Exception:
+                fecha_prefill = None
+            Fecha_siniestro = st.date_input("Fecha siniestro", value=fecha_prefill, key=f"c_fecha_{selected_siniestro}")
+            Lugar_siniestro = st.text_input("Lugar siniestro", value=base["LUGAR SINIESTRO"], key=f"c_lugar_{selected_siniestro}")
+            Medio_asign = st.selectbox("Medio de asignación", ["Call center", "PP", "Otro"],
+                                       index=(["Call center","PP","Otro"].index(base["MEDIO ASIGNACIÓN"])
+                                              if base["MEDIO ASIGNACIÓN"] in ["Call center","PP","Otro"] else 0),
+                                       key=f"c_medio_{selected_siniestro}")
 
-    # -------- TAB 4 --------
-    with tab4:
-        marca = st.text_input("Marca", registro["MARCA"])
-        submarca = st.text_input("Submarca", registro["SUBMARCA"])
-        version = st.text_input("Versión", registro["VERSIÓN"])
-        anio = st.text_input("Año/Modelo", registro["AÑO/MODELO"])
-        serie = st.text_input("Número de serie", registro["NO. SERIE"])
-        motor = st.text_input("Motor", registro["MOTOR"])
-        patente = st.text_input("Patente", registro["PATENTE"])
+            # ASEGURADO
+            st.subheader("Datos del asegurado")
+            A_Nombre = st.text_input("Nombre asegurado", value=base["NOMBRE ASEGURADO"], key=f"c_aseg_nom_{selected_siniestro}")
+            A_Rut = st.text_input("Rut asegurado", value=base["RUT ASEGURADO"], key=f"c_aseg_rut_{selected_siniestro}")
+            A_Tipo = st.selectbox("Tipo de persona (asegurado)", ["Natural", "Jurídica"],
+                                  index=(["Natural","Jurídica"].index(base["TIPO DE PERSONA ASEGURADO"])
+                                         if base["TIPO DE PERSONA ASEGURADO"] in ["Natural","Jurídica"] else 0),
+                                  key=f"c_aseg_tipo_{selected_siniestro}")
+            A_Tel = st.text_input("Teléfono asegurado", value=base["TEL. ASEGURADO"], key=f"c_aseg_tel_{selected_siniestro}")
+            A_Correo = st.text_input("Correo asegurado", value=base["CORREO ASEGURADO"], key=f"c_aseg_mail_{selected_siniestro}")
+            A_Dir = st.text_input("Dirección asegurado", value=base["DIRECCIÓN ASEGURADO"], key=f"c_aseg_dir_{selected_siniestro}")
 
-    # -------- TAB 5: ESTATUS --------
-    with tab5:
-        st.subheader("📌 Cambiar estatus del siniestro")
+            # PROPIETARIO
+            st.subheader("Datos del propietario")
+            P_Nombre = st.text_input("Nombre propietario", value=base["NOMBRE PROPIETARIO"], key=f"c_prop_nom_{selected_siniestro}")
+            P_Rut = st.text_input("Rut propietario", value=base["RUT PROPIETARIO"], key=f"c_prop_rut_{selected_siniestro}")
+            P_Tipo = st.selectbox("Tipo de persona (propietario)", ["Natural", "Jurídica"],
+                                  index=(["Natural","Jurídica"].index(base["TIPO DE PERSONA PROPIETARIO"])
+                                         if base["TIPO DE PERSONA PROPIETARIO"] in ["Natural","Jurídica"] else 0),
+                                  key=f"c_prop_tipo_{selected_siniestro}")
+            P_Tel = st.text_input("Teléfono propietario", value=base["TEL. PROPIETARIO"], key=f"c_prop_tel_{selected_siniestro}")
+            P_Correo = st.text_input("Correo propietario", value=base["CORREO PROPIETARIO"], key=f"c_prop_mail_{selected_siniestro}")
+            P_Dir = st.text_input("Dirección propietario", value=base["DIRECCIÓN PROPIETARIO"], key=f"c_prop_dir_{selected_siniestro}")
 
-        nuevo_estatus = st.selectbox(
-            "Nuevo estatus",
-            ["ASIGNADO", "EN PROCESO", "FINALIZADO", "PENDIENTE", "CANCELADO"]
-        )
+            # VEHÍCULO
+            st.subheader("Datos del vehículo")
+            Marca = st.text_input("Marca", value=base["MARCA"], key=f"c_veh_marca_{selected_siniestro}")
+            Submarca = st.text_input("Submarca", value=base["SUBMARCA"], key=f"c_veh_submarca_{selected_siniestro}")
+            Version = st.text_input("Versión", value=base["VERSIÓN"], key=f"c_veh_version_{selected_siniestro}")
+            Anio = st.text_input("Año/Modelo", value=base["AÑO/MODELO"], key=f"c_veh_anio_{selected_siniestro}")
+            Serie = st.text_input("Número de serie", value=base["NO. SERIE"], key=f"c_veh_serie_{selected_siniestro}")
+            Motor = st.text_input("Motor", value=base["MOTOR"], key=f"c_veh_motor_{selected_siniestro}")
+            Patente = st.text_input("Patente", value=base["PATENTE"], key=f"c_veh_patente_{selected_siniestro}")
 
-        if st.button("Registrar estatus"):
-            from datetime import datetime
-            from zoneinfo import ZoneInfo
+            submit_changes = st.form_submit_button("💾 Guardar cambios en todas las filas")
 
+        # AL SUBMIT: actualizar TODAS las filas del siniestro
+        if submit_changes:
+            # validaciones básicas
+            errores = []
+            if not selected_siniestro:
+                st.error("No hay siniestro seleccionado.")
+                return
+            if not Correlativo:
+                errores.append("Correlativo obligatorio.")
+            if A_Correo and not re.match(r"^[\w\.-]+@[\w\.-]+\.\w+$", A_Correo):
+                errores.append("Correo asegurado inválido.")
+            if P_Correo and not re.match(r"^[\w\.-]+@[\w\.-]+\.\w+$", P_Correo):
+                errores.append("Correo propietario inválido.")
+
+            if errores:
+                st.error("Corrige:\n- " + "\n- ".join(errores))
+            else:
+                # Construir fila con el ORDEN EXACTO de tu hoja (29 columnas)
+                # 1..29 según tu esquema
+                updated_row = [
+                    str(selected_siniestro),          # 1 # DE SINIESTRO
+                    Correlativo,                      # 2 CORRELATIVO
+                    Fecha_siniestro.strftime("%Y-%m-%d") if Fecha_siniestro else "",  # 3 FECHA SINIESTRO
+                    Lugar_siniestro,                  # 4 LUGAR SINIESTRO
+                    Medio_asign,                      # 5 MEDIO ASIGNACIÓN
+                    Marca,                             # 6 MARCA
+                    Submarca,                          # 7 SUBMARCA
+                    Version,                           # 8 VERSIÓN
+                    Anio,                              # 9 AÑO/MODELO
+                    Serie,                             # 10 NO. SERIE
+                    Motor,                             # 11 MOTOR
+                    Patente,                           # 12 PATENTE
+                    "",                                # 13 FECHA ESTATUS BITÁCORA (no tocar)
+                    "",                                # 14 ESTATUS (no tocar)
+                    A_Nombre,                          # 15 NOMBRE ASEGURADO
+                    A_Rut,                             # 16 RUT ASEGURADO
+                    A_Tipo,                            # 17 TIPO DE PERSONA ASEGURADO
+                    A_Tel,                             # 18 TEL. ASEGURADO
+                    A_Correo,                          # 19 CORREO ASEGURADO
+                    A_Dir,                             # 20 DIRECCIÓN ASEGURADO
+                    P_Nombre,                          # 21 NOMBRE PROPIETARIO
+                    P_Rut,                             # 22 RUT PROPIETARIO
+                    P_Tipo,                            # 23 TIPO DE PERSONA PROPIETARIO
+                    P_Tel,                             # 24 TEL. PROPIETARIO
+                    P_Correo,                          # 25 CORREO PROPIETARIO
+                    P_Dir,                             # 26 DIRECCIÓN PROPIETARIO
+                    st.session_state.get("LIQUIDADOR", ""), # 27 LIQUIDADOR (se mantiene o actualiza según tu lógica)
+                    st.session_state.get("USUARIO", ""),    # 28 CORREO LIQUIDADOR (usuario)
+                    base.get("DRIVE", "")               # 29 DRIVE (mantener)
+                ]
+
+                # Actualizar cada fila que corresponde al siniestro
+                indices = sin_df.index.tolist()  # índices relativos al df original? sin_df was reset, need original positions
+                # we must find original row numbers in sheet_form
+                orig_indices = df.index[df["# DE SINIESTRO"] == str(selected_siniestro)].tolist()
+                try:
+                    for orig in orig_indices:
+                        row_number = orig + 2  # +2 por header
+                        # Actualiza columnas A:AC (29 columnas -> A..AC)
+                        sheet_form.update(f"A{row_number}:AC{row_number}", [updated_row])
+                    st.success("Cambios aplicados en todas las filas del siniestro.")
+                except Exception as e:
+                    st.error(f"Error al actualizar en Google Sheets: {e}")
+
+    # ---------------- TAB: AGREGAR ESTATUS / SEGUIMIENTO ----------------
+    with tab_estatus:
+        st.header("Agregar estatus / seguimiento")
+
+        with st.form(f"form_estatus_{selected_siniestro}"):
+            nuevo_estatus = st.selectbox("Nuevo estatus", [
+                "ASIGNADO", "EN PROCESO", "FINALIZADO", "PENDIENTE", "CANCELADO"
+            ], key=f"estatus_sel_{selected_siniestro}")
+            comentario = st.text_area("Comentario (opcional)", key=f"estatus_com_{selected_siniestro}")
+            submit_status = st.form_submit_button("➕ Agregar estatus")
+
+        if submit_status:
+            # construir nueva fila copiando base y cambiando campos requeridos
             timestamp = datetime.now(ZoneInfo("America/Mexico_City")).strftime("%Y-%m-%d %H:%M:%S")
+            nueva = [
+                str(selected_siniestro),   # 1
+                base.get("CORRELATIVO", ""),   # 2
+                base.get("FECHA SINIESTRO", ""),# 3
+                base.get("LUGAR SINIESTRO", ""),# 4
+                base.get("MEDIO ASIGNACIÓN", ""),#5
+                base.get("MARCA", ""),         #6
+                base.get("SUBMARCA", ""),      #7
+                base.get("VERSIÓN", ""),       #8
+                base.get("AÑO/MODELO", ""),    #9
+                base.get("NO. SERIE", ""),     #10
+                base.get("MOTOR", ""),         #11
+                base.get("PATENTE", ""),       #12
+                timestamp,                     #13 FECHA ESTATUS BITÁCORA (nuevo)
+                nuevo_estatus,                 #14 ESTATUS (nuevo)
+                base.get("NOMBRE ASEGURADO", ""),#15
+                base.get("RUT ASEGURADO", ""),   #16
+                base.get("TIPO DE PERSONA ASEGURADO", ""), #17
+                base.get("TEL. ASEGURADO", ""),  #18
+                base.get("CORREO ASEGURADO", ""),#19
+                base.get("DIRECCIÓN ASEGURADO", ""),#20
+                base.get("NOMBRE PROPIETARIO", ""),#21
+                base.get("RUT PROPIETARIO", ""),   #22
+                base.get("TIPO DE PERSONA PROPIETARIO", ""),#23
+                base.get("TEL. PROPIETARIO", ""),  #24
+                base.get("CORREO PROPIETARIO", ""),#25
+                base.get("DIRECCIÓN PROPIETARIO", ""),#26
+                st.session_state.get("LIQUIDADOR", ""),   #27 LIQUIDADOR (usuario actual)
+                st.session_state.get("USUARIO", ""),      #28 CORREO LIQUIDADOR
+                base.get("DRIVE", "")                     #29 DRIVE
+            ]
+            try:
+                sheet_form.append_row(nueva)
+                st.success("Estatus agregado: fila nueva creada en la bitácora.")
+            except Exception as e:
+                st.error(f"Error al agregar estatus: {e}")
 
-            sheet_form.append_row([
-                selected,   # 1
-                "", "", "", "",   # 2-5
-                "", "", "", "", "", "", "",  # 6-12
-                timestamp,        # 13
-                nuevo_estatus,    # 14
-                "", "", "", "", "", "",      # 15-20
-                "", "", "", "", "", "",      # 21-26
-                st.session_state["nombre_usuario"],   # 27
-                st.session_state["correo_usuario"],   # 28
-                ""  # 29
-            ])
-
-            st.success("Estatus registrado correctamente")
-
-    st.write("---")
-
-    # ================================
-    # BOTÓN FINAL PARA GUARDAR CAMBIOS
-    # ================================
-    if st.button("💾 Guardar cambios en los datos"):
-        from datetime import datetime
-        from zoneinfo import ZoneInfo
-
-        todas_las_filas = df[df["# DE SINIESTRO"] == selected].index
-
-        updated_row = [
-            selected,                     # 1
-            correlativo,                  # 2
-            str(fecha_siniestro),         # 3
-            lugar_siniestro,              # 4
-            medio_asignacion,             # 5
-            marca,                        # 6
-            submarca,                     # 7
-            version,                      # 8
-            anio,                         # 9
-            serie,                        # 10
-            motor,                        # 11
-            patente,                      # 12
-            "",                           # 13
-            "",                           # 14
-            aseg_nombre,                  # 15
-            aseg_rut,                     # 16
-            aseg_persona,                 # 17
-            aseg_tel,                     # 18
-            aseg_mail,                    # 19
-            aseg_dir,                     # 20
-            prop_nombre,                  # 21
-            prop_rut,                     # 22
-            prop_tipo,                    # 23
-            prop_tel,                     # 24
-            prop_mail,                    # 25
-            prop_dir,                     # 26
-            st.session_state["nombre_usuario"],   # 27
-            st.session_state["correo_usuario"],   # 28
-            ""                             # 29
-        ]
-
-        for fila in todas_las_filas:
-            sheet_form.update(f"A{fila+2}:AC{fila+2}", [updated_row])
-
-        st.success("Cambios guardados correctamente en todas las filas del siniestro.")
-
+    # End function
 
 # =======================================================
 #               VISTA LIQUIDADOR
