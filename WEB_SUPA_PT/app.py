@@ -152,7 +152,36 @@ def panel_seguimiento(df_sel, df, siniestro_id):
 
     #nuevo_estatus = st.text_input("Nuevo estatus del siniestro")
     nuevo_estatus = st.selectbox("ESTATUS",["ASIGNADO","EN PROCESO","CANCELADO","FRAUDE"])
-    
+    comentario = st.text_area("COMENTARIOS", height=120)
+
+    st.write("Subir archivos para agregar al expediente del siniestro:")
+
+    uploaded_files = st.file_uploader(
+        "Selecciona los archivos",
+        type=None,
+        accept_multiple_files=True
+    )
+
+    links_archivos = []
+
+    if uploaded_files:
+        # Obtener o crear carpeta del siniestro
+        nombre_carpeta = f"SINIESTRO_{ref['SINIESTRO']}"
+        carpeta_id = obtener_o_crear_carpeta(nombre_carpeta, drive_service)
+
+        for archivo in uploaded_files:
+            # Subir al drive con tu misma función existente
+            archivo_id = subir_archivo_drive(
+                archivo.name,
+                archivo.read(),
+                archivo.type,
+                carpeta_id,
+                drive_service
+            )
+
+            link = f"https://drive.google.com/file/d/{archivo_id}/view"
+            links_archivos.append(link)
+
     if st.button("➕ Agregar estatus"):
 
         if not nuevo_estatus:
@@ -165,6 +194,8 @@ def panel_seguimiento(df_sel, df, siniestro_id):
         ref["FECHA ESTATUS BITÁCORA"] = ahora.strftime("%Y-%m-%d %H:%M:%S")
 
         ref["ESTATUS"] = nuevo_estatus
+        ref["COMENTARIO"] = comentario
+        ref["DRIVE"] = "\n".join(links_archivos)
 
         # LIQUIDADOR
         ref["LIQUIDADOR"] = st.session_state["LIQUIDADOR"]
