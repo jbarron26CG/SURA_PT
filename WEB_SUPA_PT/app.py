@@ -5,7 +5,7 @@ from googleapiclient.discovery import build
 from googleapiclient.http import MediaIoBaseUpload
 import io
 import gspread
-import datetime
+#import datetime
 from datetime import datetime
 import re
 from zoneinfo import ZoneInfo
@@ -154,7 +154,7 @@ def reset_form_registro():
         # DATOS DEL SINIESTRO
         "siniestro_num": "",
         "siniestro_correl": "",
-        "siniestro_fecha": datetime.date.today(),   # ← CORREGIDO
+        "siniestro_fecha": datetime.today().date(),   # ← CORREGIDO
         "siniestro_lugar": "",
         "siniestro_medio": "Call center",
 
