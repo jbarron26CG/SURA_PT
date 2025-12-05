@@ -225,16 +225,19 @@ def panel_modificar_datos(df_sel, df, siniestro_id):
     with st.expander("DATOS DEL ASEGURADO", expanded=False):
         asegurado_nombre = st.text_input("Nombre asegurado", ref["NOMBRE ASEGURADO"])
         asegurado_rut = st.text_input("RUT asegurado", ref["RUT ASEGURADO"])
-        asegurado_tipo = st.text_input("Tipo persona asegurado", ref["TIPO DE PERSONA ASEGURADO"])
+        #asegurado_tipo = st.text_input("Tipo persona asegurado", ref["TIPO DE PERSONA ASEGURADO"])
+        asegurado_tipo = st.selectbox("Tipo persona asegurado", ["Jurídica", "Natural"], index=["Jurídica", "Natural"].index(ref["TIPO DE PERSONA ASEGURADO"]))
         asegurado_tel = st.text_input("Teléfono asegurado", ref["TEL. ASEGURADO"])
         asegurado_correo = st.text_input("Correo asegurado", ref["CORREO ASEGURADO"])
         asegurado_dir = st.text_input("Dirección asegurado", ref["DIRECCIÓN ASEGURADO"])
+        #medio = st.selectbox("Medio de asignación", ["Call center", "PP", "Otro"], index=["Call center","PP","Otro"].index(ref["MEDIO ASIGNACIÓN"]))
 
     # Datos propietario
     with st.expander("DATOS DEL PROPIETARIO", expanded=False):
         propietario_nombre = st.text_input("Nombre propietario", ref["NOMBRE PROPIETARIO"])
         propietario_rut = st.text_input("RUT propietario", ref["RUT PROPIETARIO"])
-        propietario_tipo = st.text_input("Tipo persona propietario", ref["TIPO DE PERSONA PROPIETARIO"])
+        #propietario_tipo = st.text_input("Tipo persona propietario", ref["TIPO DE PERSONA PROPIETARIO"])
+        propietario_tipo = st.selectbox("Tipo persona propietario", ["Jurídica", "Natural"], index=["Jurídica", "Natural"].index(ref["TIPO DE PERSONA PROPIETARIO"]))
         propietario_tel = st.text_input("Tel. propietario", ref["TEL. PROPIETARIO"])
         propietario_correo = st.text_input("Correo propietario", ref["CORREO PROPIETARIO"])
         propietario_dir = st.text_input("Dirección propietario", ref["DIRECCIÓN PROPIETARIO"])
