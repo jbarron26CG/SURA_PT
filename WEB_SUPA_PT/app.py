@@ -8,6 +8,7 @@ import gspread
 from datetime import datetime
 import re
 from zoneinfo import ZoneInfo
+import datetime
 
 # =======================================================
 #             CONFIGURAR CREDENCIALES
@@ -145,12 +146,14 @@ def guardar_dataframe(sheet, df):
     sheet.clear()
     sheet.update([df.columns.tolist()] + df.values.tolist())
 
+
+
 def reset_form_registro():
     reset_values = {
         # DATOS DEL SINIESTRO
         "siniestro_num": "",
         "siniestro_correl": "",
-        "siniestro_fecha": None,
+        "siniestro_fecha": datetime.date.today(),   # ← CORREGIDO
         "siniestro_lugar": "",
         "siniestro_medio": "Call center",
 
@@ -174,15 +177,17 @@ def reset_form_registro():
         "veh_marca": "",
         "veh_submarca": "",
         "veh_version": "",
-        "veh_anio": 1900,       # valor mínimo permitido por tu number_input
+        "veh_anio": 1900,    # debe estar dentro del min/max
         "veh_serie": "",
         "veh_motor": "",
         "veh_patente": "",
-        "veh_archivos": None,
+        "veh_archivos": []   # ← file_uploader vacío (mejor que None)
     }
 
+    # Aplicar reset
     for key, value in reset_values.items():
-        st.session_state[key] = value
+        if key in st.session_state:
+            st.session_state[key] = value
 
 
 
