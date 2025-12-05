@@ -189,7 +189,7 @@ def reset_form_registro():
     for key in widget_keys:
         if key in st.session_state:
             del st.session_state[key]
-
+    st.rerun()
 
 
 def panel_seguimiento(df_sel, df, siniestro_id):
@@ -519,6 +519,7 @@ def registro_siniestro():
                 ", ".join(links_archivos)
             ])
             reset_form_registro()
+            
             st.success("✔ Siniestro registrado correctamente.")
 
 # =======================================================
