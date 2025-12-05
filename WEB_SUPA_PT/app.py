@@ -150,45 +150,45 @@ def guardar_dataframe(sheet, df):
 
 
 def reset_form_registro():
-    reset_values = {
+    widget_keys = [
         # DATOS DEL SINIESTRO
-        "siniestro_num": "",
-        "siniestro_correl": "",
-        "siniestro_fecha": datetime.today().date(),   # ← CORREGIDO
-        "siniestro_lugar": "",
-        "siniestro_medio": "Call center",
+        "siniestro_num",
+        "siniestro_correl",
+        "siniestro_fecha",
+        "siniestro_lugar",
+        "siniestro_medio",
 
         # DATOS ASEGURADO
-        "aseg_nombre": "",
-        "aseg_rut": "",
-        "aseg_tipo": "Natural",
-        "aseg_tel": "",
-        "aseg_correo": "",
-        "aseg_direccion": "",
+        "aseg_nombre",
+        "aseg_rut",
+        "aseg_tipo",
+        "aseg_tel",
+        "aseg_correo",
+        "aseg_direccion",
 
         # DATOS PROPIETARIO
-        "prop_nombre": "",
-        "prop_rut": "",
-        "prop_tipo": "Natural",
-        "prop_tel": "",
-        "prop_correo": "",
-        "prop_direccion": "",
+        "prop_nombre",
+        "prop_rut",
+        "prop_tipo",
+        "prop_tel",
+        "prop_correo",
+        "prop_direccion",
 
         # DATOS VEHÍCULO
-        "veh_marca": "",
-        "veh_submarca": "",
-        "veh_version": "",
-        "veh_anio": 1900,    # debe estar dentro del min/max
-        "veh_serie": "",
-        "veh_motor": "",
-        "veh_patente": "",
-        "veh_archivos": []   # ← file_uploader vacío (mejor que None)
-    }
+        "veh_marca",
+        "veh_submarca",
+        "veh_version",
+        "veh_anio",
+        "veh_serie",
+        "veh_motor",
+        "veh_patente",
+        "veh_archivos",
+    ]
 
-    # Aplicar reset
-    for key, value in reset_values.items():
+    # Reiniciar widgets eliminando sus claves
+    for key in widget_keys:
         if key in st.session_state:
-            st.session_state[key] = value
+            del st.session_state[key]
 
 
 
