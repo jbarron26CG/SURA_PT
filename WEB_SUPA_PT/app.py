@@ -515,7 +515,7 @@ def registro_siniestro():
             st.rerun()
             st.success("✔ Siniestro registrado correctamente.")
 
-        if st.button("Limpiar registro"):
+        if st.form_submit_button("Limpiar registro"):
             reset_form_registro()
             st.rerun()   
 
