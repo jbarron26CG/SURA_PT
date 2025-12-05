@@ -195,10 +195,7 @@ def panel_seguimiento(df_sel, df, siniestro_id):
 
         ref["ESTATUS"] = nuevo_estatus
         ref["COMENTARIO"] = comentario
-        ref["DRIVE"] = "\n".join(links_archivos)
-
-        # LIQUIDADOR
-        ref["LIQUIDADOR"] = st.session_state["LIQUIDADOR"]
+        #["LIQUIDADOR"] = st.session_state["LIQUIDADOR"]
         ref["CORREO LIQUIDADOR"] = st.session_state["USUARIO"]
 
         #df = df.append(ref, ignore_index=True)
