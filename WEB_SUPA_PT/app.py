@@ -145,6 +145,46 @@ def guardar_dataframe(sheet, df):
     sheet.clear()
     sheet.update([df.columns.tolist()] + df.values.tolist())
 
+def reset_form_registro():
+    reset_values = {
+        # DATOS DEL SINIESTRO
+        "siniestro_num": "",
+        "siniestro_correl": "",
+        "siniestro_fecha": None,
+        "siniestro_lugar": "",
+        "siniestro_medio": "Call center",
+
+        # DATOS ASEGURADO
+        "aseg_nombre": "",
+        "aseg_rut": "",
+        "aseg_tipo": "Natural",
+        "aseg_tel": "",
+        "aseg_correo": "",
+        "aseg_direccion": "",
+
+        # DATOS PROPIETARIO
+        "prop_nombre": "",
+        "prop_rut": "",
+        "prop_tipo": "Natural",
+        "prop_tel": "",
+        "prop_correo": "",
+        "prop_direccion": "",
+
+        # DATOS VEHÍCULO
+        "veh_marca": "",
+        "veh_submarca": "",
+        "veh_version": "",
+        "veh_anio": 1900,       # valor mínimo permitido por tu number_input
+        "veh_serie": "",
+        "veh_motor": "",
+        "veh_patente": "",
+        "veh_archivos": None,
+    }
+
+    for key, value in reset_values.items():
+        st.session_state[key] = value
+
+
 
 def panel_seguimiento(df_sel, df, siniestro_id):
 
@@ -472,7 +512,7 @@ def registro_siniestro():
                 carpeta_link,
                 ", ".join(links_archivos)
             ])
-
+            reset_form_registro()
             st.success("✔ Siniestro registrado correctamente.")
 
 # =======================================================
