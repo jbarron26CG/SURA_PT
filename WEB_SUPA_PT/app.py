@@ -482,10 +482,9 @@ def vista_liquidador():
 
     st.title("Panel Liquidador")
 
-    st.sidebar.markdown("### GESTIÓN DE SINIESTRO")
-
-    registro = st.sidebar.button("REGISTRO")
-    actualizar = st.sidebar.button("ACTUALIZAR")
+    with st.sidebar.expander("GESTIÓN DE SINIESTRO", expanded=False):
+        registro = st.button("REGISTRO")
+        actualizar = st.button("ACTUALIZAR")
 
     # =====================================================================================
     #                                REGISTRAR SINIESTRO
