@@ -482,16 +482,27 @@ def vista_liquidador():
 
     st.title("Panel Liquidador")
 
+    # Inicializar la variable si no existe
+    if "vista" not in st.session_state:
+        st.session_state.vista = None
+
+    # ----------------------------------------------------
+    #  MENÚ LATERAL
+    # ----------------------------------------------------
     with st.sidebar.expander("GESTIÓN DE SINIESTRO", expanded=False):
-        registro = st.button("REGISTRO",use_container_width=True,width=150,icon="📄")
-        actualizar = st.button("ACTUALIZAR",use_container_width=True,width=150,icon="🔄️")
+        if st.button("REGISTRO", use_container_width=True, icon="📄"):
+            st.session_state.vista = "REGISTRO"
+
+        if st.button("ACTUALIZAR", use_container_width=True, icon="🔄️"):
+            st.session_state.vista = "ACTUALIZAR"
 
     # =====================================================================================
     #                                REGISTRAR SINIESTRO
     # =====================================================================================
-    if registro:
-       registro_siniestro()
-    if actualizar:
+    if st.session_state.vista == "REGISTRO":
+        registro_siniestro()
+
+    elif st.session_state.vista == "ACTUALIZAR":
         vista_modificar_siniestro()
 # =======================================================
 #                VISTA ADMINISTRADOR
