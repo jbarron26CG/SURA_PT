@@ -482,36 +482,9 @@ def vista_liquidador():
 
     st.title("Panel Liquidador")
 
-    # ---- Quitar estilo a los botones ----
-    st.markdown("""
-        <style>
-        .unstyled-button > button {
-            background-color: transparent !important;
-            color: inherit !important;
-            border: none !important;
-            padding: 0 !important;
-            text-align: left !important;
-            box-shadow: none !important;
-        }
-        .unstyled-button > button:hover {
-            color: #1f6feb !important; /* opcional: color al pasar el mouse */
-            background-color: transparent !important;
-        }
-        </style>
-    """, unsafe_allow_html=True)
-
     with st.sidebar.expander("GESTIÓN DE SINIESTRO", expanded=False):
-        col1, col2 = st.columns([1,1])
-        with col1:
-            registro = st.container().markdown(
-                '<div class="unstyled-button">' + st.button("REGISTRO", key="r")._repr_html_() + '</div>',
-                unsafe_allow_html=True
-            )
-        with col2:
-            actualizar = st.container().markdown(
-                '<div class="unstyled-button">' + st.button("ACTUALIZAR", key="a")._repr_html_() + '</div>',
-                unsafe_allow_html=True
-            )
+        registro = st.button("REGISTRO",use_container_width=True,width=150,icon="📄")
+        actualizar = st.button("ACTUALIZAR",use_container_width=True,width=150,icon="🔄️")
 
     # =====================================================================================
     #                                REGISTRAR SINIESTRO
