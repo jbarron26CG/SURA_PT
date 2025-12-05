@@ -150,8 +150,9 @@ def panel_seguimiento(df_sel, df, siniestro_id):
 
     st.subheader("📌 Agregar Estatus (Seguimiento)")
 
-    nuevo_estatus = st.text_input("Nuevo estatus del siniestro")
-
+    #nuevo_estatus = st.text_input("Nuevo estatus del siniestro")
+    nuevo_estatus = st.selectbox("ESTATUS",["ASIGNADO","EN PROCESO","CANCELADO","FRAUDE"])
+    
     if st.button("➕ Agregar estatus"):
 
         if not nuevo_estatus:
@@ -166,8 +167,8 @@ def panel_seguimiento(df_sel, df, siniestro_id):
         ref["ESTATUS"] = nuevo_estatus
 
         # LIQUIDADOR
-        ref["LIQUIDADOR"] = st.session_state["user_name"]
-        ref["CORREO LIQUIDADOR"] = st.session_state["user_email"]
+        ref["LIQUIDADOR"] = st.session_state["LIQUIDADOR"]
+        ref["CORREO LIQUIDADOR"] = st.session_state["USER"]
 
         df = df.append(ref, ignore_index=True)
 
@@ -258,7 +259,7 @@ def vista_modificar_siniestro():
     st.subheader("🔍 Buscar siniestro para modificar")
 
     # Buscar siniestro
-    busqueda = st.text_input("Número de siniestro / patente / nombre")
+    busqueda = st.text_input("ESCRIBE NÚMERO DE SINIESTRO")
 
     df = obtener_dataframe(sheet_form)
 
