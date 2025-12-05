@@ -517,7 +517,7 @@ def registro_siniestro():
 
         if st.button("Limpiar registro"):
             reset_form_registro()
-            st.experimental_rerun()   
+            st.rerun()   
 
 # =======================================================
 #               VISTA LIQUIDADOR
