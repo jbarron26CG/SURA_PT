@@ -166,7 +166,7 @@ def panel_seguimiento(df_sel, df, siniestro_id):
 
     if uploaded_files:
         # Obtener o crear carpeta del siniestro
-        nombre_carpeta = f"SINIESTRO_{ref['SINIESTRO']}"
+        nombre_carpeta = f"SINIESTRO_{ref['# DE SINIESTRO']}"
         carpeta_id = obtener_o_crear_carpeta(nombre_carpeta, drive_service)
 
         for archivo in uploaded_files:
