@@ -150,46 +150,39 @@ def guardar_dataframe(sheet, df):
 
 
 def reset_form_registro():
-    widget_keys = [
-        # DATOS DEL SINIESTRO
-        "siniestro_num",
-        "siniestro_correl",
-        "siniestro_fecha",
-        "siniestro_lugar",
-        "siniestro_medio",
+    reset_values = {
+        "siniestro_num": "",
+        "siniestro_correl": "",
+        "siniestro_fecha": datetime.today().date(),
+        "siniestro_lugar": "",
+        "siniestro_medio": "Call center",
 
-        # DATOS ASEGURADO
-        "aseg_nombre",
-        "aseg_rut",
-        "aseg_tipo",
-        "aseg_tel",
-        "aseg_correo",
-        "aseg_direccion",
+        "aseg_nombre": "",
+        "aseg_rut": "",
+        "aseg_tipo": "Natural",
+        "aseg_tel": "",
+        "aseg_correo": "",
+        "aseg_direccion": "",
 
-        # DATOS PROPIETARIO
-        "prop_nombre",
-        "prop_rut",
-        "prop_tipo",
-        "prop_tel",
-        "prop_correo",
-        "prop_direccion",
+        "prop_nombre": "",
+        "prop_rut": "",
+        "prop_tipo": "Natural",
+        "prop_tel": "",
+        "prop_correo": "",
+        "prop_direccion": "",
 
-        # DATOS VEHÍCULO
-        "veh_marca",
-        "veh_submarca",
-        "veh_version",
-        "veh_anio",
-        "veh_serie",
-        "veh_motor",
-        "veh_patente",
-        "veh_archivos",
-    ]
+        "veh_marca": "",
+        "veh_submarca": "",
+        "veh_version": "",
+        "veh_anio": 1900,
+        "veh_serie": "",
+        "veh_motor": "",
+        "veh_patente": "",
+        "veh_archivos": []
+    }
 
-    # Reiniciar widgets eliminando sus claves
-    for key in widget_keys:
-        if key in st.session_state:
-            del st.session_state[key]
-    st.rerun()
+    for k, v in reset_values.items():
+        st.session_state[k] = v
 
 
 def panel_seguimiento(df_sel, df, siniestro_id):
@@ -519,8 +512,12 @@ def registro_siniestro():
                 ", ".join(links_archivos)
             ])
             reset_form_registro()
-            
+            st.rerun()
             st.success("✔ Siniestro registrado correctamente.")
+
+        if st.button("Limpiar registro"):
+            reset_form_registro()
+            st.experimental_rerun()   
 
 # =======================================================
 #               VISTA LIQUIDADOR
