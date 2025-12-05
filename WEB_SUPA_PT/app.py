@@ -213,36 +213,41 @@ def panel_modificar_datos(df_sel, df, siniestro_id):
     ref = df_sel.iloc[0]
 
     # Campos a editar
-    num_siniestro = st.text_input("Número de siniestro", ref["# DE SINIESTRO"])
-    correlativo = st.text_input("Correlativo", ref["CORRELATIVO"])
-    fecha_siniestro = st.date_input("Fecha del siniestro", pd.to_datetime(ref["FECHA SINIESTRO"]))
-    lugar = st.text_input("Lugar del siniestro", ref["LUGAR SINIESTRO"])
-    medio = st.selectbox("Medio de asignación", ["Call center", "PP", "Otro"], index=["Call center","PP","Otro"].index(ref["MEDIO ASIGNACIÓN"]))
+    with st.expander("DATOS DEL SINIESTRO", expanded=False):
+    #num_siniestro = st.text_input("Número de siniestro", ref["# DE SINIESTRO"])
+        num_siniestro = siniestro_id
+        correlativo = st.text_input("Correlativo", ref["CORRELATIVO"])
+        fecha_siniestro = st.date_input("Fecha del siniestro", pd.to_datetime(ref["FECHA SINIESTRO"]))
+        lugar = st.text_input("Lugar del siniestro", ref["LUGAR SINIESTRO"])
+        medio = st.selectbox("Medio de asignación", ["Call center", "PP", "Otro"], index=["Call center","PP","Otro"].index(ref["MEDIO ASIGNACIÓN"]))
 
     # Datos asegurado
-    asegurado_nombre = st.text_input("Nombre asegurado", ref["NOMBRE ASEGURADO"])
-    asegurado_rut = st.text_input("RUT asegurado", ref["RUT ASEGURADO"])
-    asegurado_tipo = st.text_input("Tipo persona asegurado", ref["TIPO DE PERSONA ASEGURADO"])
-    asegurado_tel = st.text_input("Teléfono asegurado", ref["TEL. ASEGURADO"])
-    asegurado_correo = st.text_input("Correo asegurado", ref["CORREO ASEGURADO"])
-    asegurado_dir = st.text_input("Dirección asegurado", ref["DIRECCIÓN ASEGURADO"])
+    with st.expander("DATOS DEL ASEGURADO", expanded=False):
+        asegurado_nombre = st.text_input("Nombre asegurado", ref["NOMBRE ASEGURADO"])
+        asegurado_rut = st.text_input("RUT asegurado", ref["RUT ASEGURADO"])
+        asegurado_tipo = st.text_input("Tipo persona asegurado", ref["TIPO DE PERSONA ASEGURADO"])
+        asegurado_tel = st.text_input("Teléfono asegurado", ref["TEL. ASEGURADO"])
+        asegurado_correo = st.text_input("Correo asegurado", ref["CORREO ASEGURADO"])
+        asegurado_dir = st.text_input("Dirección asegurado", ref["DIRECCIÓN ASEGURADO"])
 
     # Datos propietario
-    propietario_nombre = st.text_input("Nombre propietario", ref["NOMBRE PROPIETARIO"])
-    propietario_rut = st.text_input("RUT propietario", ref["RUT PROPIETARIO"])
-    propietario_tipo = st.text_input("Tipo persona propietario", ref["TIPO DE PERSONA PROPIETARIO"])
-    propietario_tel = st.text_input("Tel. propietario", ref["TEL. PROPIETARIO"])
-    propietario_correo = st.text_input("Correo propietario", ref["CORREO PROPIETARIO"])
-    propietario_dir = st.text_input("Dirección propietario", ref["DIRECCIÓN PROPIETARIO"])
+    with st.expander("DATOS DEL PROPIETARIO", expanded=False):
+        propietario_nombre = st.text_input("Nombre propietario", ref["NOMBRE PROPIETARIO"])
+        propietario_rut = st.text_input("RUT propietario", ref["RUT PROPIETARIO"])
+        propietario_tipo = st.text_input("Tipo persona propietario", ref["TIPO DE PERSONA PROPIETARIO"])
+        propietario_tel = st.text_input("Tel. propietario", ref["TEL. PROPIETARIO"])
+        propietario_correo = st.text_input("Correo propietario", ref["CORREO PROPIETARIO"])
+        propietario_dir = st.text_input("Dirección propietario", ref["DIRECCIÓN PROPIETARIO"])
 
     # Datos vehículo
-    marca = st.text_input("Marca", ref["MARCA"])
-    submarca = st.text_input("Submarca", ref["SUBMARCA"])
-    version = st.text_input("Versión", ref["VERSIÓN"])
-    anio = st.text_input("Año/Modelo", ref["AÑO/MODELO"])
-    serie = st.text_input("Número de serie", ref["NO. SERIE"])
-    motor = st.text_input("Motor", ref["MOTOR"])
-    patente = st.text_input("Patente", ref["PATENTE"])
+    with st.expander("DATOS DEL VEHÍCULO", expanded=False):
+        marca = st.text_input("Marca", ref["MARCA"])
+        submarca = st.text_input("Submarca", ref["SUBMARCA"])
+        version = st.text_input("Versión", ref["VERSIÓN"])
+        anio = st.text_input("Año/Modelo", ref["AÑO/MODELO"])
+        serie = st.text_input("Número de serie", ref["NO. SERIE"])
+        motor = st.text_input("Motor", ref["MOTOR"])
+        patente = st.text_input("Patente", ref["PATENTE"])
 
     if st.button("💾 Guardar cambios"):
         mask = df["# DE SINIESTRO"] == siniestro_id
