@@ -170,8 +170,8 @@ def panel_seguimiento(df_sel, df, siniestro_id):
         ref["LIQUIDADOR"] = st.session_state["LIQUIDADOR"]
         ref["CORREO LIQUIDADOR"] = st.session_state["USUARIO"]
 
-        df = df.append(ref, ignore_index=True)
-
+        #df = df.append(ref, ignore_index=True)
+        df = pd.concat([df, pd.DataFrame([ref])], ignore_index=True)
         guardar_dataframe(sheet_form, df)
 
         st.success("Estatus agregado correctamente.")
