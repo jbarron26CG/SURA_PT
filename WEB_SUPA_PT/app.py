@@ -219,7 +219,7 @@ def vista_modificar_siniestro():
             selected_siniestro = row["# DE SINIESTRO"]
             # guardar en session para persistencia si se desea
             st.session_state["selected_siniestro"] = selected_siniestro
-            st.experimental_rerun()
+            st.rerun()
 
     # Si user ya seleccionó antes y no refrescó
     if "selected_siniestro" in st.session_state and not selected_siniestro:
