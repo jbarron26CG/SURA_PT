@@ -481,23 +481,18 @@ def registro_siniestro():
 def vista_liquidador():
 
     st.title("Panel Liquidador")
-    
-    '''
-    opcion = st.sidebar.radio(
-        "Seleccione una sección:",
-        ["Registrar siniestro", "Modificar siniestro"]
-    )'''
-    opcion = st.sidebar.selectbox(
-        "GESTIÓN DE SINIESTRO",
-        ["REGISTRO","ACTUALIZAR"]
-    )
+
+    st.sidebar.markdown("### GESTIÓN DE SINIESTRO")
+
+    registro = st.sidebar.button("REGISTRO")
+    actualizar = st.sidebar.button("ACTUALIZAR")
 
     # =====================================================================================
     #                                REGISTRAR SINIESTRO
     # =====================================================================================
-    if opcion == "REGISTRO":
+    if registro:
        registro_siniestro()
-    if opcion == "ACTUALIZAR":
+    if actualizar:
         vista_modificar_siniestro()
 # =======================================================
 #                VISTA ADMINISTRADOR
