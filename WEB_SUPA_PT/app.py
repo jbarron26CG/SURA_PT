@@ -190,6 +190,10 @@ def reset_form_registro():
     if "veh_archivos" in st.session_state:
             del st.session_state["veh_archivos"]
 
+def limpiar_y_recargar():
+    reset_form_registro()
+    st.rerun()
+
 def panel_seguimiento(df_sel, df, siniestro_id):
 
     st.subheader("📌 Agregar Estatus (Seguimiento)")
@@ -444,10 +448,14 @@ def registro_siniestro():
             )
 
         # >>>>>>>> AQUÍ VA EL SUBMIT BUTTON <<<<<<<<
-            enviado = st.form_submit_button("Guardar")
+            #enviado = st.form_submit_button("Guardar")
+            enviado = st.form_submit_button(
+                "Guardar",
+                on_click=limpiar_y_recargar # <--- Usa el callback para recargar y limpiar
+)
     col1, col2 = st.columns(2)
     with col2: # Puedes usar esta columna para alineación si lo deseas
-        limpiar = st.button("Limpiar Registro (Reiniciar)")
+        limpiar = st.button("Limpiar Registro (Reiniciar)", on_click=limpiar_y_recargar)
 
     # ======================= VALIDACIONES =============================
         if enviado:
@@ -520,13 +528,10 @@ def registro_siniestro():
                 ", ".join(links_archivos)
             ])
             st.success("✔ Siniestro registrado correctamente.")
-            reset_form_registro()
-            st.rerun()
+            #reset_form_registro()
+            #st.rerun()
+            return
 
-
-        if limpiar:
-            reset_form_registro()
-            st.rerun()  
 
 # =======================================================
 #               VISTA LIQUIDADOR
