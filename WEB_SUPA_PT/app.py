@@ -449,10 +449,8 @@ def registro_siniestro():
 
         # >>>>>>>> AQUÍ VA EL SUBMIT BUTTON <<<<<<<<
             #enviado = st.form_submit_button("Guardar")
-            enviado = st.form_submit_button(
-                "Guardar",
-                on_click=limpiar_y_recargar # <--- Usa el callback para recargar y limpiar
-)
+            enviado = st.form_submit_button("Guardar")
+
     col1, col2 = st.columns(2)
     with col2: # Puedes usar esta columna para alineación si lo deseas
         limpiar = st.button("Limpiar Registro (Reiniciar)", on_click=limpiar_y_recargar)
@@ -528,9 +526,8 @@ def registro_siniestro():
                 ", ".join(links_archivos)
             ])
             st.success("✔ Siniestro registrado correctamente.")
-            #reset_form_registro()
-            #st.rerun()
-            return
+            reset_form_registro()
+            st.rerun()
 
 
 # =======================================================
