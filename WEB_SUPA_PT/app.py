@@ -179,8 +179,7 @@ def reset_form_registro():
         "veh_anio": 1900,
         "veh_serie": "",
         "veh_motor": "",
-        "veh_patente": "",
-        "veh_archivos": [], # Para el file_uploader, se restablecerá implícitamente
+        "veh_patente": "" # Para el file_uploader, se restablecerá implícitamente
     }
     
     # Itera sobre los valores por defecto y actualiza st.session_state
@@ -188,7 +187,9 @@ def reset_form_registro():
     for key, default_value in default_values.items():
         if key in st.session_state:
             st.session_state[key] = default_value
-
+    if "veh_archivos" in st.session_state:
+            del st.session_state["veh_archivos"]
+            
 def panel_seguimiento(df_sel, df, siniestro_id):
 
     st.subheader("📌 Agregar Estatus (Seguimiento)")
@@ -474,12 +475,10 @@ def registro_siniestro():
             )
 
         # >>>>>>>> AQUÍ VA EL SUBMIT BUTTON <<<<<<<<
-            #enviado = st.form_submit_button("Guardar")
-            col1, col2 = st.columns(2)
-            with col1:
-                enviado = st.form_submit_button("Guardar")
-            with col2:
-                limpiar = st.form_submit_button("Limpiar registro")
+            enviado = st.form_submit_button("Guardar")
+    col1, col2 = st.columns(2)
+    with col2: # Puedes usar esta columna para alineación si lo deseas
+        limpiar = st.button("Limpiar Registro (Reiniciar)")
 
     # ======================= VALIDACIONES =============================
         if enviado:
