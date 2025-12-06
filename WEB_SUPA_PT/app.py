@@ -375,7 +375,7 @@ def vista_modificar_siniestro():
 def registro_siniestro():
     st.header("Registro de nuevo siniestro")
 
-    with st.form("form_siniestro"):
+    with st.form("form_siniestro",clear_on_submit=True):
 
         tabs = st.tabs([
             "📁 Datos del siniestro",
@@ -448,7 +448,6 @@ def registro_siniestro():
             )
 
         # >>>>>>>> AQUÍ VA EL SUBMIT BUTTON <<<<<<<<
-            #enviado = st.form_submit_button("Guardar")
             enviado = st.form_submit_button("Guardar")
 
     col1, col2 = st.columns(2)
