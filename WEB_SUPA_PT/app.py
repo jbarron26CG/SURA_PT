@@ -150,41 +150,10 @@ def guardar_dataframe(sheet, df):
 
 
 def reset_form_registro():
-    reset_values = {
-        "siniestro_num": "",
-        "siniestro_correl": "",
-        "siniestro_fecha": datetime.today().date(),
-        "siniestro_lugar": "",
-        "siniestro_medio": "Call center",
-
-        "aseg_nombre": "",
-        "aseg_rut": "",
-        "aseg_tipo": "Natural",
-        "aseg_tel": "",
-        "aseg_correo": "",
-        "aseg_direccion": "",
-
-        "prop_nombre": "",
-        "prop_rut": "",
-        "prop_tipo": "Natural",
-        "prop_tel": "",
-        "prop_correo": "",
-        "prop_direccion": "",
-
-        "veh_marca": "",
-        "veh_submarca": "",
-        "veh_version": "",
-        "veh_anio": 1900,
-        "veh_serie": "",
-        "veh_motor": "",
-        "veh_patente": "",
-        "veh_archivos": []
-    }
-
-    for k, v in reset_values.items():
-        st.session_state[k] = v
-
-
+    for k in list(st.session_state.keys()):
+        if k.startswith(("siniestro_", "aseg_", "prop_", "veh_")):
+            del st.session_state[k]
+            
 def panel_seguimiento(df_sel, df, siniestro_id):
 
     st.subheader("📌 Agregar Estatus (Seguimiento)")
@@ -365,6 +334,37 @@ def vista_modificar_siniestro():
 
 def registro_siniestro():
     st.header("Registro de nuevo siniestro")
+
+    if "form_initialized" not in st.session_state:
+        st.session_state.update({
+            "siniestro_num": "",
+            "siniestro_correl": "",
+            "siniestro_fecha": datetime.today().date(),
+            "siniestro_lugar": "",
+            "siniestro_medio": "Call center",
+            "aseg_nombre": "",
+            "aseg_rut": "",
+            "aseg_tipo": "Natural",
+            "aseg_tel": "",
+            "aseg_correo": "",
+            "aseg_direccion": "",
+            "prop_nombre": "",
+            "prop_rut": "",
+            "prop_tipo": "Natural",
+            "prop_tel": "",
+            "prop_correo": "",
+            "prop_direccion": "",
+            "veh_marca": "",
+            "veh_submarca": "",
+            "veh_version": "",
+            "veh_anio": 1900,
+            "veh_serie": "",
+            "veh_motor": "",
+            "veh_patente": "",
+            "veh_archivos": [],
+        })
+        st.session_state.form_initialized = True
+
 
     with st.form("form_siniestro"):
 
