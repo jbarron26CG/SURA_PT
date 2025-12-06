@@ -540,7 +540,8 @@ import io
 def vista_buscar_siniestro():
     st.subheader("🔎 Buscar siniestro")
 
-    siniestro = st.text_input("ESCRIBE NÚMERO DE SINIESTRO:", key="buscar_siniestro_num")
+    #siniestro = st.text_input("ESCRIBE NÚMERO DE SINIESTRO:", key="buscar_siniestro_num")
+    siniestro = st.text_input("ESCRIBE NÚMERO DE SINIESTRO:")
 
     #if st.button("Buscar", icon="🔎",use_container_width=True,width=150):
     if siniestro:
@@ -554,7 +555,7 @@ def vista_buscar_siniestro():
             return
 
         st.success("Resultado encontrado:")
-        st.dataframe(resultado, use_container_width=True)
+        st.dataframe(resultado, use_container_width=True,hide_index=True)
 
         # ============================
         #   LINK A DRIVE
