@@ -163,13 +163,13 @@ def reset_form_registro():
         "siniestro_medio": "Call center",
         "aseg_nombre": "",
         "aseg_rut": "",
-        "aseg_tipo": "Natural",
+        "aseg_tipo": "",
         "aseg_tel": "",
         "aseg_correo": "",
         "aseg_direccion": "",
         "prop_nombre": "",
         "prop_rut": "",
-        "prop_tipo": "Natural",
+        "prop_tipo": "",
         "prop_tel": "",
         "prop_correo": "",
         "prop_direccion": "",
@@ -274,7 +274,7 @@ def panel_modificar_datos(df_sel, df, siniestro_id):
         asegurado_nombre = st.text_input("Nombre asegurado", ref["NOMBRE ASEGURADO"])
         asegurado_rut = st.text_input("RUT asegurado", ref["RUT ASEGURADO"])
         #asegurado_tipo = st.text_input("Tipo persona asegurado", ref["TIPO DE PERSONA ASEGURADO"])
-        asegurado_tipo = st.selectbox("Tipo persona asegurado", ["Jurídica", "Natural"], index=["Jurídica", "Natural"].index(ref["TIPO DE PERSONA ASEGURADO"]))
+        asegurado_tipo = st.selectbox("Tipo persona asegurado", ["","Jurídica", "Natural"], index=["","Jurídica", "Natural"].index(ref["TIPO DE PERSONA ASEGURADO"]))
         asegurado_tel = st.text_input("Teléfono asegurado", ref["TEL. ASEGURADO"])
         asegurado_correo = st.text_input("Correo asegurado", ref["CORREO ASEGURADO"])
         asegurado_dir = st.text_input("Dirección asegurado", ref["DIRECCIÓN ASEGURADO"])
@@ -285,7 +285,7 @@ def panel_modificar_datos(df_sel, df, siniestro_id):
         propietario_nombre = st.text_input("Nombre propietario", ref["NOMBRE PROPIETARIO"])
         propietario_rut = st.text_input("RUT propietario", ref["RUT PROPIETARIO"])
         #propietario_tipo = st.text_input("Tipo persona propietario", ref["TIPO DE PERSONA PROPIETARIO"])
-        propietario_tipo = st.selectbox("Tipo persona propietario", ["Jurídica", "Natural"], index=["Jurídica", "Natural"].index(ref["TIPO DE PERSONA PROPIETARIO"]))
+        propietario_tipo = st.selectbox("Tipo persona propietario", ["","Jurídica", "Natural"], index=["","Jurídica", "Natural"].index(ref["TIPO DE PERSONA PROPIETARIO"]))
         propietario_tel = st.text_input("Tel. propietario", ref["TEL. PROPIETARIO"])
         propietario_correo = st.text_input("Correo propietario", ref["CORREO PROPIETARIO"])
         propietario_dir = st.text_input("Dirección propietario", ref["DIRECCIÓN PROPIETARIO"])
@@ -402,11 +402,11 @@ def registro_siniestro():
         with tabs[1]:
             st.subheader("Datos del asegurado")
 
-            Asegurado_Nombre = st.text_input("Nombre del asegurado", key="aseg_nombre")
-            Asegurado_Rut = st.text_input("RUT del asegurado", key="aseg_rut")
+            Asegurado_Nombre = st.text_input("Nombre", key="aseg_nombre")
+            Asegurado_Rut = st.text_input("RUT", key="aseg_rut")
             Asegurado_Tipo = st.selectbox(
-                "Tipo de persona (asegurado)",
-                ["Natural", "Jurídica"],
+                "Tipo de persona",
+                ["","Natural", "Jurídica"],
                 key="aseg_tipo"
             )
             Asegurado_Telefono = st.text_input("Teléfono", key="aseg_tel")
@@ -420,8 +420,8 @@ def registro_siniestro():
             Propietario_Nombre = st.text_input("Nombre", key="prop_nombre")
             Propietario_Rut = st.text_input("RUT", key="prop_rut")
             Propietario_Tipo = st.selectbox(
-                "Tipo de persona (propietario)",
-                ["Natural", "Jurídica"],
+                "Tipo de persona",
+                ["","Natural", "Jurídica"],
                 key="prop_tipo"
             )
             Propietario_Telefono = st.text_input("Teléfono", key="prop_tel")
