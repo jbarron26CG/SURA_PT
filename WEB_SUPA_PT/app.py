@@ -605,7 +605,7 @@ def vista_liquidador():
     with st.sidebar:
         if st.button("BUSCAR / CONSULTAR", use_container_width=True, icon="🔎"):
             st.session_state.vista = "BUSCAR"
-        st.markdown("<div style='height:20vh'></div>", unsafe_allow_html=True)
+        #st.markdown("<div style='height:20vh'></div>", unsafe_allow_html=True)
         if st.button("Cerrar sesión", use_container_width=True,icon="❌"):
             st.session_state.clear()
             st.rerun()
@@ -628,7 +628,7 @@ def vista_admin():
     st.title("Panel Administrador")
 
     with st.sidebar:
-        st.markdown("<div style='height:20vh'></div>", unsafe_allow_html=True)
+        #st.markdown("<div style='height:20vh'></div>", unsafe_allow_html=True)
         if st.button("Cerrar sesión", use_container_width=True,icon="❌"):
             st.session_state.clear()
             st.rerun()
