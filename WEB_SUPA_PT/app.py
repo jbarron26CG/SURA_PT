@@ -585,37 +585,39 @@ if not st.session_state["auth"]:
 # =======================================================
 #                 INTERFAZ PRINCIPAL
 # =======================================================
-#st.sidebar.write(f"USUARIO: **{st.session_state['USUARIO']}**")
-#st.sidebar.write(f"ROL: **{st.session_state['ROL']}**")
-
-#if st.sidebar.button("Cerrar sesión",icon="❌",use_container_width=True):
-#    st.session_state.clear()
-#    st.rerun()
-
 with st.sidebar:
-    st.markdown("""
-        <div style="text-align:center; padding-top:10px;">
-            <h3 style="margin-bottom:0;">👤 Usuario</h3>
-        </div>
-    """, unsafe_allow_html=True)
+    # --- CONTENEDOR SUPERIOR (Título + Menú) ---
+    top = st.container()
+    # --- CONTENEDOR INFERIOR (Cerrar sesión) ---
+    bottom = st.container()
 
-    st.markdown(f"""
-        **Usuario:**  
-        <span style="color:#4CAF50; font-size:18px;">{st.session_state['USUARIO']}</span>
+    # =========================
+    # TOP SECTION
+    # =========================
+    with top:
+        st.markdown("""
+            <h2 style="text-align:center; margin-bottom:5px;">SURA</h2>
+            <h4 style="text-align:center; margin-top:-10px;">PÉRDIDAS TOTALES</h4>
+            <hr>
+        """, unsafe_allow_html=True)
 
-        ---
-        **Rol:**  
-        <span style="color:#2196F3; font-size:18px;">{st.session_state['ROL']}</span>
-        ---
-    """, unsafe_allow_html=True)
+        st.subheader("📋 MENÚ")
 
-    # Botón de cerrar sesión
-    st.error("Cerrar sesión")  # Título estético
-    if st.button("❌ Cerrar", use_container_width=True):
-        st.session_state.clear()
-        st.rerun()
+        # Mostrar menú según rol
+        if st.session_state["ROL"] == "ADMINISTRADOR":
+            vista_admin()
+        else:
+            vista_liquidador()
 
-if st.session_state["ROL"] == "ADMINISTRADOR":
-    vista_admin()
-else:
-    vista_liquidador()
+    # =========================
+    # BOTTOM SECTION (Cerrar sesión)
+    # =========================
+    with bottom:
+        st.write("")  # separador visual
+        st.write("")  # empujar hacia abajo
+        st.markdown("<div style='height:30vh'></div>", unsafe_allow_html=True)
+
+        if st.button("❌ Cerrar sesión", use_container_width=True, type="secondary"):
+            st.session_state.clear()
+            st.rerun()
+
