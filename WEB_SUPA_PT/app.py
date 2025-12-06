@@ -527,7 +527,7 @@ def registro_siniestro():
             ])
             st.success("✔ Siniestro registrado correctamente.")
             #reset_form_registro()
-            st.rerun()
+            #st.rerun()
 
 
 # =======================================================
