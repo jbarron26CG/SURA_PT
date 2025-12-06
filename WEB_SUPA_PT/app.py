@@ -550,6 +550,7 @@ def vista_liquidador():
 
         if st.button("ACTUALIZAR", use_container_width=True, icon="🔄️"):
             st.session_state.vista = "ACTUALIZAR"
+    with st.sidebar:
         if st.button("Cerrar sesión", use_container_width=True,icon="❌"):
             st.session_state.clear()
             st.rerun()
