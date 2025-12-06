@@ -339,7 +339,7 @@ def panel_modificar_datos(df_sel, df, siniestro_id):
 
 def vista_modificar_siniestro():
 
-    st.subheader("🔍 Buscar siniestro para modificar")
+    st.subheader("🔍 Buscar siniestro para actualizar")
 
     # Buscar siniestro
     busqueda = st.text_input("ESCRIBE NÚMERO DE SINIESTRO")
@@ -372,9 +372,9 @@ def vista_modificar_siniestro():
             with tabs[1]:
                 panel_seguimiento(df_sel, df, seleccionado)
             
-            if st.button("Volver al menú",icon="⬅️",use_container_width=True,width=100):
-                st.session_state.vista = None
-                st.rerun()
+    if st.button("Volver al menú",icon="⬅️",use_container_width=True,width=100):
+        st.session_state.vista = None
+        st.rerun()
 
 def registro_siniestro():
     st.header("Registro de nuevo siniestro")
@@ -540,41 +540,40 @@ import io
 def vista_buscar_siniestro():
     st.subheader("🔎 Buscar siniestro")
 
-    siniestro = st.text_input("ESCRIBE EL NÚMERO DE SINIESTRO:", key="buscar_siniestro_num")
+    siniestro = st.text_input("ESCRIBE NÚMERO DE SINIESTRO:", key="buscar_siniestro_num")
 
     #if st.button("Buscar", icon="🔎",use_container_width=True,width=150):
-    if siniestro == "":
-        st.warning("Ingresa un número de siniestro.")
-        return
+    if siniestro:
+        datos = sheet_form.get_all_records()
+        df = pd.DataFrame(datos)
 
-    datos = sheet_form.get_all_records()
-    df = pd.DataFrame(datos)
+        resultado = df[df["# DE SINIESTRO"].astype(str) == str(siniestro)]
 
-    resultado = df[df["# DE SINIESTRO"].astype(str) == str(siniestro)]
+        if resultado.empty:
+            st.error("❌ Siniestro no encontrado.")
+            return
 
-    if resultado.empty:
-        st.error("❌ Siniestro no encontrado.")
-        return
+        st.success("Resultado encontrado:")
+        st.dataframe(resultado, use_container_width=True)
 
-    st.success("Resultado encontrado:")
-    st.dataframe(resultado, use_container_width=True)
+        # ============================
+        #   LINK A DRIVE
+        # ============================
+        if "DRIVE" in resultado.columns:
+            drive_link = resultado.iloc[0]["DRIVE"]
 
-    # ============================
-    #   LINK A DRIVE
-    # ============================
-    if "DRIVE" in resultado.columns:
-        drive_link = resultado.iloc[0]["DRIVE"]
-
-        if isinstance(drive_link, str) and drive_link.startswith("http"):
-            st.markdown(
-                f"<a href='{drive_link}' target='_blank' style='font-size:18px;'>📁 Abrir carpeta en Drive</a>",
-                unsafe_allow_html=True
-            )
+            if isinstance(drive_link, str) and drive_link.startswith("http"):
+                st.markdown(
+                    f"<a href='{drive_link}' target='_blank' style='font-size:18px;'>📁 Abrir carpeta en Drive</a>",
+                    unsafe_allow_html=True
+                )
+            else:
+                st.info("Este siniestro no tiene un link de Drive registrado.")
         else:
-            st.info("Este siniestro no tiene un link de Drive registrado.")
+            st.info("La columna 'DRIVE' no existe en el registro.")
     else:
-        st.info("La columna 'DRIVE' no existe en el registro.")
-
+        st.warning("Ingresa un número de siniestro.")
+        return 
     # Botón para volver
     if st.button("Volver al menú",icon="⬅️"):
         st.session_state.vista = None
