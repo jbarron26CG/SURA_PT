@@ -453,7 +453,7 @@ def registro_siniestro():
 
     col1, col2 = st.columns(2)
     with col2: # Puedes usar esta columna para alineación si lo deseas
-        limpiar = st.button("Limpiar Registro (Reiniciar)", on_click=limpiar_y_recargar)
+        limpiar = st.button("Limpiar Registro", on_click=limpiar_y_recargar)
 
     # ======================= VALIDACIONES =============================
         if enviado:
@@ -526,7 +526,7 @@ def registro_siniestro():
                 ", ".join(links_archivos)
             ])
             st.success("✔ Siniestro registrado correctamente.")
-            reset_form_registro()
+            #reset_form_registro()
             st.rerun()
 
 
