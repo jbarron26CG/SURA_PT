@@ -371,6 +371,10 @@ def vista_modificar_siniestro():
 
             with tabs[1]:
                 panel_seguimiento(df_sel, df, seleccionado)
+            
+            if st.button("Volver al menú",icon="⬅️",use_container_width=True,width=100):
+                st.session_state.vista = None
+                st.rerun()
 
 def registro_siniestro():
     st.header("Registro de nuevo siniestro")
@@ -450,10 +454,13 @@ def registro_siniestro():
         # >>>>>>>> AQUÍ VA EL SUBMIT BUTTON <<<<<<<<
             enviado = st.form_submit_button("Guardar",use_container_width=True,width=150,icon="💾")
 
-    col1, col2 = st.columns(2)
+    col1, col2, col3 = st.columns(3)
     with col2: # Puedes usar esta columna para alineación si lo deseas
-        limpiar = st.button("Limpiar Registro", on_click=limpiar_y_recargar,use_container_width=True,width=150,icon="🗑️")
-
+        limpiar = st.button("Limpiar Registro", on_click=limpiar_y_recargar,use_container_width=True,width=100,icon="🗑️")
+    with col3:
+        if st.button("Volver al menú",icon="⬅️",use_container_width=True,width=100):
+            st.session_state.vista = None
+            st.rerun()
     # ======================= VALIDACIONES =============================
         if enviado:
             errores = []
@@ -533,9 +540,9 @@ import io
 def vista_buscar_siniestro():
     st.subheader("🔎 Buscar siniestro")
 
-    siniestro = st.text_input("Número de siniestro:", key="buscar_siniestro_num")
+    siniestro = st.text_input("ESCRIBE EL NÚMERO DE SINIESTRO:", key="buscar_siniestro_num")
 
-    if st.button("Buscar", icon="🔎"):
+    if st.button("Buscar", icon="🔎",use_container_width=True,width=150):
         if siniestro == "":
             st.warning("Ingresa un número de siniestro.")
             return
@@ -569,7 +576,7 @@ def vista_buscar_siniestro():
             st.info("La columna 'DRIVE' no existe en el registro.")
 
     # Botón para volver
-    if st.button("⬅ Volver al menú"):
+    if st.button("Volver al menú",icon="⬅️"):
         st.session_state.vista = None
         st.rerun()
 
@@ -611,7 +618,7 @@ def vista_liquidador():
 
     elif st.session_state.vista == "ACTUALIZAR":
         vista_modificar_siniestro()
-        
+
     elif st.session_state.vista == "BUSCAR":
         vista_buscar_siniestro()
 
