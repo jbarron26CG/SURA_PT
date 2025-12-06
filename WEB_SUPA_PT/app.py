@@ -542,38 +542,38 @@ def vista_buscar_siniestro():
 
     siniestro = st.text_input("ESCRIBE EL NÚMERO DE SINIESTRO:", key="buscar_siniestro_num")
 
-    if st.button("Buscar", icon="🔎",use_container_width=True,width=150):
-        if siniestro == "":
-            st.warning("Ingresa un número de siniestro.")
-            return
+    #if st.button("Buscar", icon="🔎",use_container_width=True,width=150):
+    if siniestro == "":
+        st.warning("Ingresa un número de siniestro.")
+        return
 
-        datos = sheet_form.get_all_records()
-        df = pd.DataFrame(datos)
+    datos = sheet_form.get_all_records()
+    df = pd.DataFrame(datos)
 
-        resultado = df[df["# DE SINIESTRO"].astype(str) == str(siniestro)]
+    resultado = df[df["# DE SINIESTRO"].astype(str) == str(siniestro)]
 
-        if resultado.empty:
-            st.error("❌ Siniestro no encontrado.")
-            return
+    if resultado.empty:
+        st.error("❌ Siniestro no encontrado.")
+        return
 
-        st.success("Resultado encontrado:")
-        st.dataframe(resultado, use_container_width=True)
+    st.success("Resultado encontrado:")
+    st.dataframe(resultado, use_container_width=True)
 
-        # ============================
-        #   LINK A DRIVE
-        # ============================
-        if "DRIVE" in resultado.columns:
-            drive_link = resultado.iloc[0]["DRIVE"]
+    # ============================
+    #   LINK A DRIVE
+    # ============================
+    if "DRIVE" in resultado.columns:
+        drive_link = resultado.iloc[0]["DRIVE"]
 
-            if isinstance(drive_link, str) and drive_link.startswith("http"):
-                st.markdown(
-                    f"<a href='{drive_link}' target='_blank' style='font-size:18px;'>📁 Abrir carpeta en Drive</a>",
-                    unsafe_allow_html=True
-                )
-            else:
-                st.info("Este siniestro no tiene un link de Drive registrado.")
+        if isinstance(drive_link, str) and drive_link.startswith("http"):
+            st.markdown(
+                f"<a href='{drive_link}' target='_blank' style='font-size:18px;'>📁 Abrir carpeta en Drive</a>",
+                unsafe_allow_html=True
+            )
         else:
-            st.info("La columna 'DRIVE' no existe en el registro.")
+            st.info("Este siniestro no tiene un link de Drive registrado.")
+    else:
+        st.info("La columna 'DRIVE' no existe en el registro.")
 
     # Botón para volver
     if st.button("Volver al menú",icon="⬅️"):
