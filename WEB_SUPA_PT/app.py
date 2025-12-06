@@ -439,7 +439,12 @@ def registro_siniestro():
             )
 
         # >>>>>>>> AQUÍ VA EL SUBMIT BUTTON <<<<<<<<
-            enviado = st.form_submit_button("Guardar")
+            #enviado = st.form_submit_button("Guardar")
+            col1, col2 = st.columns(2)
+            with col1:
+                enviado = st.form_submit_button("Guardar")
+            with col2:
+                limpiar = st.form_submit_button("Limpiar registro")
 
     # ======================= VALIDACIONES =============================
         if enviado:
@@ -511,13 +516,14 @@ def registro_siniestro():
                 carpeta_link,
                 ", ".join(links_archivos)
             ])
+            st.success("✔ Siniestro registrado correctamente.")
             reset_form_registro()
             st.rerun()
-            st.success("✔ Siniestro registrado correctamente.")
 
-        if st.form_submit_button("Limpiar registro"):
+
+        if limpiar:
             reset_form_registro()
-            st.rerun()   
+            st.rerun()  
 
 # =======================================================
 #               VISTA LIQUIDADOR
