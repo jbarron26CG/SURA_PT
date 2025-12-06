@@ -534,7 +534,8 @@ def registro_siniestro():
 # =======================================================
 def vista_liquidador():
 
-    st.title("Panel Liquidador")
+    Liquidador_Nombre = st.session_state["LIQUIDADOR"]
+    st.title(f"Bienvenido, {Liquidador_Nombre}")
 
     # Inicializar la variable si no existe
     if "vista" not in st.session_state:
