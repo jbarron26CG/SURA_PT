@@ -569,11 +569,17 @@ def vista_liquidador():
 def vista_admin():
     st.title("Panel Administrador")
 
+    with st.sidebar:
+        if st.button("Cerrar sesión", use_container_width=True,icon="❌"):
+            st.session_state.clear()
+            st.rerun()
+
     datos = sheet_form.get_all_records()
     df = pd.DataFrame(datos)
 
     st.dataframe(df)
     st.write("Total de registros:", len(df))
+
 
 
 # =======================================================
@@ -599,7 +605,7 @@ if not st.session_state["auth"]:
 with st.sidebar:
     st.markdown("""
         <div style="text-align:center; padding-top:10px;">
-            <h3 style="margin-bottom:0;">SURA PÉRDIDAS TOTALES</h3>
+            <h1 style="margin-bottom:0; color:#0033A0;">SURA PÉRDIDAS TOTALES</h1>
         </div>
     """, unsafe_allow_html=True)
 
