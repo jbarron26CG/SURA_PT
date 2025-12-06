@@ -528,6 +528,52 @@ def registro_siniestro():
             #reset_form_registro()
             #st.rerun()
 
+import io
+
+def vista_buscar_siniestro():
+    st.subheader("🔎 Buscar siniestro")
+
+    siniestro = st.text_input("Número de siniestro:", key="buscar_siniestro_num")
+
+    if st.button("Buscar", icon="🔎"):
+        if siniestro == "":
+            st.warning("Ingresa un número de siniestro.")
+            return
+
+        datos = sheet_form.get_all_records()
+        df = pd.DataFrame(datos)
+
+        resultado = df[df["# DE SINIESTRO"].astype(str) == str(siniestro)]
+
+        if resultado.empty:
+            st.error("❌ Siniestro no encontrado.")
+            return
+
+        st.success("Resultado encontrado:")
+        st.dataframe(resultado, use_container_width=True)
+
+        # ============================
+        #   LINK A DRIVE
+        # ============================
+        if "DRIVE" in resultado.columns:
+            drive_link = resultado.iloc[0]["DRIVE"]
+
+            if isinstance(drive_link, str) and drive_link.startswith("http"):
+                st.markdown(
+                    f"<a href='{drive_link}' target='_blank' style='font-size:18px;'>📁 Abrir carpeta en Drive</a>",
+                    unsafe_allow_html=True
+                )
+            else:
+                st.info("Este siniestro no tiene un link de Drive registrado.")
+        else:
+            st.info("La columna 'DRIVE' no existe en el registro.")
+
+    # Botón para volver
+    if st.button("⬅ Volver al menú"):
+        st.session_state.vista = None
+        st.rerun()
+
+
 
 # =======================================================
 #               VISTA LIQUIDADOR
@@ -545,24 +591,29 @@ def vista_liquidador():
     #  MENÚ LATERAL
     # ----------------------------------------------------
     with st.sidebar.expander("GESTIÓN DE SINIESTRO", expanded=False):
-        if st.button("REGISTRO", use_container_width=True, icon="📄"):
-            st.session_state.vista = "REGISTRO"
+        if st.button("REGISTRAR", use_container_width=True, icon="📄"):
+            st.session_state.vista = "REGISTRAR"
 
         if st.button("ACTUALIZAR", use_container_width=True, icon="🔄️"):
             st.session_state.vista = "ACTUALIZAR"
     with st.sidebar:
-        st.markdown("<div style='height:30vh'></div>", unsafe_allow_html=True)
+        if st.button("BUSCAR / CONSULTAR", use_container_width=True, icon="🔎"):
+            st.session_state.vista = "BUSCAR"
+        st.markdown("<div style='height:20vh'></div>", unsafe_allow_html=True)
         if st.button("Cerrar sesión", use_container_width=True,icon="❌"):
             st.session_state.clear()
             st.rerun()
     # =====================================================================================
     #                                REGISTRAR SINIESTRO
     # =====================================================================================
-    if st.session_state.vista == "REGISTRO":
+    if st.session_state.vista == "REGISTRAR":
         registro_siniestro()
 
     elif st.session_state.vista == "ACTUALIZAR":
         vista_modificar_siniestro()
+        
+    elif st.session_state.vista == "BUSCAR":
+        vista_buscar_siniestro()
 
 # =======================================================
 #                VISTA ADMINISTRADOR
@@ -571,6 +622,7 @@ def vista_admin():
     st.title("Panel Administrador")
 
     with st.sidebar:
+        st.markdown("<div style='height:20vh'></div>", unsafe_allow_html=True)
         if st.button("Cerrar sesión", use_container_width=True,icon="❌"):
             st.session_state.clear()
             st.rerun()
