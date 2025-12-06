@@ -448,7 +448,7 @@ def registro_siniestro():
             )
 
         # >>>>>>>> AQUÍ VA EL SUBMIT BUTTON <<<<<<<<
-            enviado = st.form_submit_button("Guardar")
+            enviado = st.form_submit_button("Guardar",use_container_width=True,width=150,icon="💾")
 
     col1, col2 = st.columns(2)
     with col2: # Puedes usar esta columna para alineación si lo deseas
