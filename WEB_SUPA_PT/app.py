@@ -149,11 +149,46 @@ def guardar_dataframe(sheet, df):
 
 
 
+from datetime import datetime
+
 def reset_form_registro():
-    for k in list(st.session_state.keys()):
-        if k.startswith(("siniestro_", "aseg_", "prop_", "veh_")):
-            del st.session_state[k]
-            
+    """Reinicia los valores del formulario de registro de siniestro en st.session_state."""
+    
+    # Define los valores por defecto exactos que usas en el bloque de inicialización
+    default_values = {
+        "siniestro_num": "",
+        "siniestro_correl": "",
+        "siniestro_fecha": datetime.today().date(),
+        "siniestro_lugar": "",
+        "siniestro_medio": "Call center",
+        "aseg_nombre": "",
+        "aseg_rut": "",
+        "aseg_tipo": "Natural",
+        "aseg_tel": "",
+        "aseg_correo": "",
+        "aseg_direccion": "",
+        "prop_nombre": "",
+        "prop_rut": "",
+        "prop_tipo": "Natural",
+        "prop_tel": "",
+        "prop_correo": "",
+        "prop_direccion": "",
+        "veh_marca": "",
+        "veh_submarca": "",
+        "veh_version": "",
+        "veh_anio": 1900,
+        "veh_serie": "",
+        "veh_motor": "",
+        "veh_patente": "",
+        "veh_archivos": [], # Para el file_uploader, se restablecerá implícitamente
+    }
+    
+    # Itera sobre los valores por defecto y actualiza st.session_state
+    # Solo actualiza si la clave está actualmente en st.session_state (para seguridad)
+    for key, default_value in default_values.items():
+        if key in st.session_state:
+            st.session_state[key] = default_value
+
 def panel_seguimiento(df_sel, df, siniestro_id):
 
     st.subheader("📌 Agregar Estatus (Seguimiento)")
