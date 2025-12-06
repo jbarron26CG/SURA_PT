@@ -551,6 +551,7 @@ def vista_liquidador():
         if st.button("ACTUALIZAR", use_container_width=True, icon="🔄️"):
             st.session_state.vista = "ACTUALIZAR"
     with st.sidebar:
+        st.markdown("<div style='height:30vh'></div>", unsafe_allow_html=True)
         if st.button("Cerrar sesión", use_container_width=True,icon="❌"):
             st.session_state.clear()
             st.rerun()
@@ -605,7 +606,7 @@ if not st.session_state["auth"]:
 with st.sidebar:
     st.markdown("""
         <div style="text-align:center; padding-top:10px;">
-            <h1 style="margin-bottom:0; color:#0033A0;">SURA PÉRDIDAS TOTALES</h1>
+            <h1 style="margin-bottom:0; color: #00AEC7;">SURA PÉRDIDAS TOTALES</h1>
         </div>
     """, unsafe_allow_html=True)
 
