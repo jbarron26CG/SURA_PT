@@ -192,7 +192,7 @@ def reset_form_registro():
 
 def limpiar_y_recargar():
     reset_form_registro()
-    st.rerun()
+    #st.rerun()
 
 def panel_seguimiento(df_sel, df, siniestro_id):
 
