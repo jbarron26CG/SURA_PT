@@ -535,7 +535,7 @@ def registro_siniestro():
 def vista_liquidador():
 
     Liquidador_Nombre = st.session_state["LIQUIDADOR"]
-    st.title(f"Bienvenido, {Liquidador_Nombre}")
+    st.title(f"¡HOLA, {Liquidador_Nombre}!")
 
     # Inicializar la variable si no existe
     if "vista" not in st.session_state:
@@ -585,12 +585,35 @@ if not st.session_state["auth"]:
 # =======================================================
 #                 INTERFAZ PRINCIPAL
 # =======================================================
-st.sidebar.write(f"USUARIO: **{st.session_state['USUARIO']}**")
-st.sidebar.write(f"ROL: **{st.session_state['ROL']}**")
+#st.sidebar.write(f"USUARIO: **{st.session_state['USUARIO']}**")
+#st.sidebar.write(f"ROL: **{st.session_state['ROL']}**")
 
-if st.sidebar.button("Cerrar sesión ❌"):
-    st.session_state.clear()
-    st.rerun()
+#if st.sidebar.button("Cerrar sesión",icon="❌",use_container_width=True):
+#    st.session_state.clear()
+#    st.rerun()
+
+with st.sidebar:
+    st.markdown("""
+        <div style="text-align:center; padding-top:10px;">
+            <h3 style="margin-bottom:0;">👤 Usuario</h3>
+        </div>
+    """, unsafe_allow_html=True)
+
+    st.markdown(f"""
+        **Usuario:**  
+        <span style="color:#4CAF50; font-size:18px;">{st.session_state['USUARIO']}</span>
+
+        ---
+        **Rol:**  
+        <span style="color:#2196F3; font-size:18px;">{st.session_state['ROL']}</span>
+        ---
+    """, unsafe_allow_html=True)
+
+    # Botón de cerrar sesión
+    st.error("Cerrar sesión")  # Título estético
+    if st.button("❌ Cerrar", use_container_width=True):
+        st.session_state.clear()
+        st.rerun()
 
 if st.session_state["ROL"] == "ADMINISTRADOR":
     vista_admin()
