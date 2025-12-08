@@ -646,7 +646,7 @@ def vista_descargas():
             mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
         )
         
-def registro_usuario():
+def vista_registro_usuario():
     st.header("Registro de nuevo usuario")
 
     with st.form("form_usuario",clear_on_submit=True):
@@ -757,6 +757,9 @@ def vista_admin():
         vista_buscar_siniestro()
     elif st.session_state.vista == "DESCARGA":
         vista_descargas()
+    elif st.session_state.vista == "USUARIOS":
+        vista_registro_usuario()
+        
     #datos = sheet_form.get_all_records()
     #df = pd.DataFrame(datos)
 
