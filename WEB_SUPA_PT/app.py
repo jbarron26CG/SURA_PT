@@ -613,7 +613,6 @@ def vista_descargas():
             file_name="Bitacora_Operación_SURA.xlsx",
             mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
         )
-        st.success("Descarga exitosa")
 
     # --- BITÁCORA DE ÚLTIMO ESTATUS ---
     elif opcion == "Bitácora de último estatus":
@@ -646,7 +645,7 @@ def vista_descargas():
             file_name="Bitacora_UltimoEstatus_SURA.xlsx",
             mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
         )
-        st.success("Descarga exitosa")
+        
 
 # =======================================================
 #               VISTA LIQUIDADOR
