@@ -646,7 +646,10 @@ def vista_descargas():
             file_name="Bitacora_UltimoEstatus_SURA.xlsx",
             mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
         )
-        
+    if st.button("Volver al menú",icon="⬅️",use_container_width=True,width=100):
+        st.session_state.vista = None
+        st.rerun()
+         
 def vista_registro_usuario():
     st.header("Registro de nuevo usuario")
 
@@ -691,7 +694,9 @@ def vista_registro_usuario():
                 contents=[MENSAJE]
                 )
         
-
+    if st.button("Volver al menú",icon="⬅️",use_container_width=True,width=100):
+        st.session_state.vista = None
+        st.rerun()
 # =======================================================
 #               VISTA LIQUIDADOR
 # =======================================================
