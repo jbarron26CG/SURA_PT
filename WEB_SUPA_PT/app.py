@@ -603,7 +603,7 @@ def vista_descargas():
 
         buffer = io.BytesIO()
         with pd.ExcelWriter(buffer, engine="openpyxl") as writer:
-            df.to_excel(writer, index=False, sheet_name="BitacoraOperación")
+            df.to_excel(writer, index=False, sheet_name="LOG")
 
         st.download_button(
             label="📄 Descargar bitácora de operación",
@@ -633,7 +633,7 @@ def vista_descargas():
 
         buffer = io.BytesIO()
         with pd.ExcelWriter(buffer, engine="openpyxl") as writer:
-            df_ultimos.to_excel(writer, index=False, sheet_name="BitácoraÚltimoEstatus")
+            df_ultimos.to_excel(writer, index=False, sheet_name="LOG")
 
         st.download_button(
             label="📄 Descargar bitácora de último estatus",
