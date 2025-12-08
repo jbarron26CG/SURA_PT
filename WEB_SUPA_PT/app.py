@@ -671,12 +671,12 @@ def vista_registro_usuario():
             DESTINATARIO = correo
             ASUNTO = 'SURA PT - CREACIÓN DE USUARIO'
             MENSAJE = f"""Estimado <strong>{usuario}</strong>,
-            <p>Tu usuario se ha creado correctamente, sus datos de accesos son:</p>
+            Tu usuario se ha creado correctamente, sus datos de accesos son:
 
             <strong>USUARIO: </strong>{correo}
 
             <strong>CONTRASEÑA: </strong>{password}
-            
+
             <strong>ROL:</strong>{rol}
 
             Link de acceso: <a href="https://sura-pt-cibergestion.streamlit.app/">Ingresar aquí</a>
