@@ -646,6 +646,25 @@ def vista_descargas():
             mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
         )
         
+def registro_usuario():
+    st.header("Registro de nuevo usuario")
+
+    with st.form("form_usuario",clear_on_submit=True):
+        usuario = st.text_input("NOMBRE COMPLETO:", key="nom_usuario")
+        correo = st.text_input("CORREO:", key="correo")
+        password = st.text_input("CONTRASEÑA", key="password",type="password")
+        rol = st.selectbox("ROL",["ADMINISTRADOR","LIQUIDADOR"],key="rol")
+
+        enviado = st.form_submit_button("Guardar datos",use_container_width=True,width=150,icon="💾")
+
+        if enviado:
+            sheet_users.append_row([
+                correo,
+                password,
+                rol,
+                usuario
+            ])
+            st.success("Usuario registrado correctamente")
 
 # =======================================================
 #               VISTA LIQUIDADOR
