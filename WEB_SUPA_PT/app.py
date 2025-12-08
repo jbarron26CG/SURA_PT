@@ -606,9 +606,11 @@ def vista_descargas():
             df.to_excel(writer, index=False, sheet_name="LOG")
 
         st.download_button(
-            label="📄 Descargar bitácora de operación",
+            label="Descargar",
+            icon="⬇️",
+            use_container_width=True,
             data=buffer.getvalue(),
-            file_name="BITACORA_OPERACION.xlsx",
+            file_name="Bitacora_Operación_SURA.xlsx",
             mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
         )
 
@@ -636,12 +638,14 @@ def vista_descargas():
             df_ultimos.to_excel(writer, index=False, sheet_name="LOG")
 
         st.download_button(
-            label="📄 Descargar bitácora de último estatus",
+            label="Descargar",
+            icon="⬇️",
+            use_container_width=True,
             data=buffer.getvalue(),
-            file_name="BITACORA_ULTIMO_ESTATUS.xlsx",
+            file_name="Bitacora_UltimoEstatus_SURA.xlsx",
             mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
         )
-
+    st.success("Descarga exitosa")
 
 # =======================================================
 #               VISTA LIQUIDADOR
