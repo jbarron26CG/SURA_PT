@@ -539,7 +539,6 @@ def registro_siniestro():
             #reset_form_registro()
             #st.rerun()
 
-import io
 
 def vista_buscar_siniestro():
     st.subheader("🔎 Buscar siniestro")
@@ -584,6 +583,64 @@ def vista_buscar_siniestro():
         st.session_state.vista = None
         st.rerun()
 
+def vista_descargas():
+    st.subheader("📥 Descargas")
+
+    # --- Cargar datos del sheet ---
+    df = pd.DataFrame(sheet_form.get_all_records())
+
+    st.write("Selecciona el tipo de bitácora a descargar.")
+
+    opcion = st.selectbox(
+        "Tipo de descarga",
+        ["Bitácora de operación", 
+         "Bitácora de último estatus"]
+    )
+
+    # --- BITÁCORA DE OPERACIÓN ---
+    if opcion == "Bitácora de operación":
+        #st.write("Descargar todos los registros de la hoja (bitácora completa).")
+
+        buffer = io.BytesIO()
+        with pd.ExcelWriter(buffer, engine="openpyxl") as writer:
+            df.to_excel(writer, index=False, sheet_name="BitacoraOperación")
+
+        st.download_button(
+            label="📄 Descargar bitácora de operación",
+            data=buffer.getvalue(),
+            file_name="BITACORA_OPERACION.xlsx",
+            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        )
+
+    # --- BITÁCORA DE ÚLTIMO ESTATUS ---
+    elif opcion == "Bitácora de último estatus":
+        #st.write("Descargar solo el registro más reciente de cada siniestro.")
+
+        # Convertir fecha si existe
+        df["FECHA ESTATUS BITÁCORA"] = pd.to_datetime(
+            df["FECHA ESTATUS BITÁCORA"], 
+            errors="coerce"
+        )
+
+        # Ordenar para luego obtener el último registro por siniestro
+        df_sorted = df.sort_values(
+            by=["# DE SINIESTRO", "FECHA ESTATUS BITÁCORA"],
+            ascending=[True, True]
+        )
+
+        # Obtener el último registro por siniestro
+        df_ultimos = df_sorted.groupby("# DE SINIESTRO").tail(1)
+
+        buffer = io.BytesIO()
+        with pd.ExcelWriter(buffer, engine="openpyxl") as writer:
+            df_ultimos.to_excel(writer, index=False, sheet_name="BitácoraÚltimoEstatus")
+
+        st.download_button(
+            label="📄 Descargar bitácora de último estatus",
+            data=buffer.getvalue(),
+            file_name="BITACORA_ULTIMO_ESTATUS.xlsx",
+            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        )
 
 
 # =======================================================
@@ -640,6 +697,13 @@ def vista_admin():
     # ----------------------------------------------------
     #  MENÚ LATERAL
     # ----------------------------------------------------
+    with st.sidebar.expander("ADMINISTRACIÓN", expanded=False):
+        if st.button("DESCARGAS", use_container_width=True, icon="📥"):
+            st.session_state.vista = "DESCARGA"
+
+        if st.button("USUARIOS", use_container_width=True, icon="👥"):
+            st.session_state.vista = "USUARIOS"
+
     with st.sidebar.expander("GESTIÓN DE SINIESTRO", expanded=False):
         if st.button("REGISTRAR", use_container_width=True, icon="📄"):
             st.session_state.vista = "REGISTRAR"
@@ -662,9 +726,14 @@ def vista_admin():
     elif st.session_state.vista == "ACTUALIZAR":
         vista_modificar_siniestro()
 
+    # =====================================================================================
+    #                                BUSCAR / ACTUALIZAR
+    # =====================================================================================
+
     elif st.session_state.vista == "BUSCAR":
         vista_buscar_siniestro()
-
+    elif st.session_state.vista == "DESCARGA":
+        vista_descargas()
     #datos = sheet_form.get_all_records()
     #df = pd.DataFrame(datos)
 
