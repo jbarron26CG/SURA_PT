@@ -9,6 +9,7 @@ import gspread
 from datetime import datetime
 import re
 from zoneinfo import ZoneInfo
+import yagmail
 
 
 # =======================================================
@@ -665,6 +666,28 @@ def vista_registro_usuario():
                 usuario
             ])
             st.success("Usuario registrado correctamente")
+            CLAVE_APP = 'ckkazcijqkwikscd' #Contraseña de aplicación, utilizada para acceder al correo
+            REMITENTE = 'jbarron@cibergestion.com' 
+            DESTINATARIO = correo
+            ASUNTO = 'SURA PT - CREACIÓN DE USUARIO'
+            MENSAJE = f"""Estimado {usuario},
+            Tu usuario se ha creado correctamente, sus datos de accesos son:
+            <strong>USUARIO:</strong>{correo}
+            <strong>CONTRASEÑA:</strong>{password}
+            <strong>ROL:</strong>{rol}
+
+            Link de acceso: <a href="https://sura-pt-cibergestion.streamlit.app/">Ingresar aquí</a>
+            """
+            yag = yagmail.SMTP(REMITENTE, CLAVE_APP)
+
+            #Se envía el correo a los destinatarios con la estructura establecida en el item contents
+
+            yag.send(
+                to=DESTINATARIO, 
+                subject=ASUNTO, 
+                contents=[MENSAJE]
+                )
+        
 
 # =======================================================
 #               VISTA LIQUIDADOR
