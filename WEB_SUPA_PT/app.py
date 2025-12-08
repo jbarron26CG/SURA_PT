@@ -216,7 +216,7 @@ def panel_seguimiento(df_sel, df, siniestro_id):
 
     links_archivos = []
 
-    if st.button("➕ Agregar estatus"):
+    if st.button("Agregar estatus",icon="💾",use_container_width=True):
 
         if not nuevo_estatus:
             st.warning("Debes ingresar un estatus.")
