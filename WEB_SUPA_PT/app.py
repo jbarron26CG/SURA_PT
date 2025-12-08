@@ -199,7 +199,11 @@ def panel_seguimiento(df_sel, df, siniestro_id):
     st.subheader("📌 Agregar Estatus (Seguimiento)")
 
     #nuevo_estatus = st.text_input("Nuevo estatus del siniestro")
-    nuevo_estatus = st.selectbox("ESTATUS",["ASIGNADO","EN PROCESO","CANCELADO","FRAUDE"])
+    nuevo_estatus = st.selectbox("ESTATUS",["ASIGNADO","CLIENTE CONTACTADO","CARGA DOCUMENTAL RECIBIDA",
+                                            "DESVIADO A FRAUDES","DOCUMENTACIÓN COMPLETA","EN ESPERA DE PRIMAS, PÓLIZA Y/O SALDO INSOLUTO",
+                                            "PROPUESTA ECONÓMICA ENVIADA","PROPUESTA ECONÓMICA ACEPTADA","DERIVADO A CERO KM",
+                                            "DERIVADO A REPOSICIÓN","EN ESPERA DE PRIMERA FIRMA","EN ESPERA DE SEGUNDA FIRMA (ROBO)",
+                                            "EN ESPERA DE LEGALIZACIÓN","DOCUMENTACIÓN LEGALIZADA","SOLICITUD DE PAGO GENERADA","PAGO LIBERADO"])
     comentario = st.text_area("COMENTARIOS", height=120)
 
     st.write("Subir archivos para agregar al expediente del siniestro:")
@@ -267,7 +271,7 @@ def panel_modificar_datos(df_sel, df, siniestro_id):
         correlativo = st.text_input("Correlativo", ref["CORRELATIVO"])
         fecha_siniestro = st.date_input("Fecha del siniestro", pd.to_datetime(ref["FECHA SINIESTRO"]))
         lugar = st.text_input("Lugar del siniestro", ref["LUGAR SINIESTRO"])
-        medio = st.selectbox("Medio de asignación", ["Call center", "PP", "Otro"], index=["Call center","PP","Otro"].index(ref["MEDIO ASIGNACIÓN"]))
+        medio = st.selectbox("Medio de asignación", ["Call center", "PP", "ALMA"], index=["Call center","PP","ALMA"].index(ref["MEDIO ASIGNACIÓN"]))
 
     # Datos asegurado
     with st.expander("DATOS DEL ASEGURADO", expanded=False):
@@ -398,7 +402,7 @@ def registro_siniestro():
             Lugar = st.text_input("Lugar del siniestro", key="siniestro_lugar")
             Medio = st.selectbox(
                 "Medio de asignación",
-                ["Call center", "PP", "Otro"],
+                ["Call center", "PP", "ALMA"],
                 key="siniestro_medio"
             )
 
