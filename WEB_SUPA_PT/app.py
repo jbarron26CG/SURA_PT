@@ -630,19 +630,46 @@ def vista_liquidador():
 #                VISTA ADMINISTRADOR
 # =======================================================
 def vista_admin():
-    st.title("Panel Administrador")
+    Liquidador_Nombre = st.session_state["LIQUIDADOR"]
+    st.title(f"¡HOLA, {Liquidador_Nombre}!")
 
+    # Inicializar la variable si no existe
+    if "vista" not in st.session_state:
+        st.session_state.vista = None
+
+    # ----------------------------------------------------
+    #  MENÚ LATERAL
+    # ----------------------------------------------------
+    with st.sidebar.expander("GESTIÓN DE SINIESTRO", expanded=False):
+        if st.button("REGISTRAR", use_container_width=True, icon="📄"):
+            st.session_state.vista = "REGISTRAR"
+
+        if st.button("ACTUALIZAR", use_container_width=True, icon="🔄️"):
+            st.session_state.vista = "ACTUALIZAR"
     with st.sidebar:
+        if st.button("BUSCAR / CONSULTAR", use_container_width=True, icon="🔎"):
+            st.session_state.vista = "BUSCAR"
         #st.markdown("<div style='height:20vh'></div>", unsafe_allow_html=True)
         if st.button("Cerrar sesión", use_container_width=True,icon="❌"):
             st.session_state.clear()
             st.rerun()
+    # =====================================================================================
+    #                                REGISTRAR SINIESTRO
+    # =====================================================================================
+    if st.session_state.vista == "REGISTRAR":
+        registro_siniestro()
 
-    datos = sheet_form.get_all_records()
-    df = pd.DataFrame(datos)
+    elif st.session_state.vista == "ACTUALIZAR":
+        vista_modificar_siniestro()
 
-    st.dataframe(df)
-    st.write("Total de registros:", len(df))
+    elif st.session_state.vista == "BUSCAR":
+        vista_buscar_siniestro()
+
+    #datos = sheet_form.get_all_records()
+    #df = pd.DataFrame(datos)
+
+    #st.dataframe(df)
+    #st.write("Total de registros:", len(df))
 
 
 
