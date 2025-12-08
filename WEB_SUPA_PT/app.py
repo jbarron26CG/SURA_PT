@@ -670,10 +670,13 @@ def vista_registro_usuario():
             REMITENTE = 'jbarron@cibergestion.com' 
             DESTINATARIO = correo
             ASUNTO = 'SURA PT - CREACIÓN DE USUARIO'
-            MENSAJE = f"""Estimado {usuario},
-            Tu usuario se ha creado correctamente, sus datos de accesos son:
-            <strong>USUARIO:</strong>{correo}
-            <strong>CONTRASEÑA:</strong>{password}
+            MENSAJE = f"""Estimado <strong>{usuario}</strong>,
+            <p>Tu usuario se ha creado correctamente, sus datos de accesos son:</p>
+
+            <strong>USUARIO: </strong>{correo}
+
+            <strong>CONTRASEÑA: </strong>{password}
+            
             <strong>ROL:</strong>{rol}
 
             Link de acceso: <a href="https://sura-pt-cibergestion.streamlit.app/">Ingresar aquí</a>
