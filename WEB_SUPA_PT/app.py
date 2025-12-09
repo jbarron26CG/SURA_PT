@@ -658,11 +658,29 @@ def vista_registro_usuario():
         usuario = st.text_input("NOMBRE COMPLETO:", key="nom_usuario")
         correo = st.text_input("CORREO:", key="correo")
         password = st.text_input("CONTRASEÑA", key="password",type="password")
-        rol = st.selectbox("ROL",["ADMINISTRADOR","LIQUIDADOR"],key="rol")
+        rol = st.selectbox("ROL",["Seleccionar rol","ADMINISTRADOR","LIQUIDADOR"],key="rol")
 
         enviado = st.form_submit_button("Guardar datos",use_container_width=True,width=150,icon="💾")
 
         if enviado:
+            errores = []
+
+            if not usuario:
+                errores.append("Falta ingresar nombre del usuario")
+            if not correo:
+                errores.append("Falta ingresar correo del usuario")
+            if not password:
+                errores.append("Falta ingresar contraseña del usuario")
+            if rol == "Seleccionar rol":
+                errores.append("Seleccionar un rol para el usuario")
+
+            email_regex = r"^[\w\.-]+@[\w\.-]+\.\w+$"
+            if correo and not re.match(email_regex, correo):
+                errores.append("El correo del asegurado no es válido.")
+
+            if errores:
+                st.error("Revisa lo siguiente:\n- " + "\n- ".join(errores))
+                return
             sheet_users.append_row([
                 correo,
                 password,
