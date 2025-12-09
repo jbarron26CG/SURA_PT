@@ -676,7 +676,7 @@ def vista_registro_usuario():
 
             email_regex = r"^[\w\.-]+@[\w\.-]+\.\w+$"
             if correo and not re.match(email_regex, correo):
-                errores.append("El correo del asegurado no es válido.")
+                errores.append("El correo del usuario no es válido.")
 
             if errores:
                 st.error("Revisa lo siguiente:\n- " + "\n- ".join(errores))
