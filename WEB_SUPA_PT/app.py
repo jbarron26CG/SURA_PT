@@ -594,7 +594,8 @@ def vista_descargas():
 
     opcion = st.selectbox(
         "Tipo de descarga",
-        ["Bitácora de operación", 
+        ["Selecciona una opción",
+         "Bitácora de operación", 
          "Bitácora de último estatus"]
     )
 
@@ -649,7 +650,7 @@ def vista_descargas():
     if st.button("Volver al menú",icon="⬅️",use_container_width=True,width=100):
         st.session_state.vista = None
         st.rerun()
-         
+
 def vista_registro_usuario():
     st.header("Registro de nuevo usuario")
 
