@@ -260,7 +260,7 @@ def panel_seguimiento(df_sel, df, siniestro_id):
 
 def panel_modificar_datos(df_sel, df, siniestro_id):
 
-    st.subheader("✏️ Modificar Datos del Siniestro")
+    st.subheader("✏️ Modificar Datos")
 
     # Usamos la primera fila como referencia
     ref = df_sel.iloc[0]
