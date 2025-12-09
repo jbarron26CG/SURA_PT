@@ -675,15 +675,15 @@ def vista_registro_usuario():
             DESTINATARIO = correo
             ASUNTO = 'SURA PT - CREACIÓN DE USUARIO'
             MENSAJE = f"""Estimado <strong>{usuario}</strong>,
-            Tu usuario se ha creado correctamente, sus datos de accesos son:
+            Tu usuario se ha creado correctamente. A continuación, se detallan tus datos de acceso:
 
             <strong>USUARIO: </strong>{correo}
-
             <strong>CONTRASEÑA: </strong>{password}
-
             <strong>ROL:</strong>{rol}
 
-            Link de acceso: <a href="https://sura-pt-cibergestion.streamlit.app/">Ingresar aquí</a>
+            Puedes acceder a la plataforma haciendo clic en el siguiente enlace: <a href="https://sura-pt-cibergestion.streamlit.app/">Ingresar aquí</a>
+            
+            Saludos.
             """
             yag = yagmail.SMTP(REMITENTE, CLAVE_APP)
 
