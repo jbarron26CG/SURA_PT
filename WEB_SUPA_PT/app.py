@@ -608,7 +608,7 @@ def vista_descargas():
             df.to_excel(writer, index=False, sheet_name="LOG")
 
         st.download_button(
-            label="Descargar",
+            label="Descargar bitácora",
             icon="⬇️",
             use_container_width=True,
             data=buffer.getvalue(),
@@ -640,7 +640,7 @@ def vista_descargas():
             df_ultimos.to_excel(writer, index=False, sheet_name="LOG")
 
         st.download_button(
-            label="Descargar",
+            label="Descargar bitácora",
             icon="⬇️",
             use_container_width=True,
             data=buffer.getvalue(),
