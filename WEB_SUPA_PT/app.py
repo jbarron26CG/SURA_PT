@@ -377,7 +377,7 @@ def vista_modificar_siniestro():
             with tabs[1]:
                 panel_seguimiento(df_sel, df, seleccionado)
             
-    if st.button("Volver al menú",icon="⬅️",use_container_width=True,width=100):
+    if st.button("Volver al inicio",icon="⬅️",use_container_width=True,width=100):
         st.session_state.vista = None
         st.rerun()
 
@@ -463,7 +463,7 @@ def registro_siniestro():
     with col2: # Puedes usar esta columna para alineación si lo deseas
         limpiar = st.button("Limpiar Registro", on_click=limpiar_y_recargar,use_container_width=True,width=100,icon="🗑️")
     with col3:
-        if st.button("Volver al menú",icon="⬅️",use_container_width=True,width=100):
+        if st.button("Volver al inicio",icon="⬅️",use_container_width=True,width=100):
             st.session_state.vista = None
             st.rerun()
     # ======================= VALIDACIONES =============================
@@ -580,7 +580,7 @@ def vista_buscar_siniestro():
         st.warning("Ingresa un número de siniestro.")
         return 
     # Botón para volver
-    if st.button("Volver al menú",icon="⬅️"):
+    if st.button("Volver al inicio",icon="⬅️"):
         st.session_state.vista = None
         st.rerun()
 
@@ -647,7 +647,7 @@ def vista_descargas():
             file_name="Bitacora_UltimoEstatus_SURA.xlsx",
             mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
         )
-    if st.button("Volver al menú",icon="⬅️",use_container_width=True,width=100):
+    if st.button("Volver al inicio",icon="⬅️",use_container_width=True,width=100):
         st.session_state.vista = None
         st.rerun()
 
@@ -695,7 +695,7 @@ def vista_registro_usuario():
                 contents=[MENSAJE]
                 )
         
-    if st.button("Volver al menú",icon="⬅️",use_container_width=True,width=100):
+    if st.button("Volver al inicio",icon="⬅️",use_container_width=True,width=100):
         st.session_state.vista = None
         st.rerun()
 # =======================================================
