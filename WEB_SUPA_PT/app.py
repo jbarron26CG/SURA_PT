@@ -29,6 +29,7 @@ creds = Credentials.from_service_account_info(
 client = gspread.authorize(creds)
 drive_service = build("drive", "v3", credentials=creds)
 
+
 # =======================================================
 #     FUNCIONES PARA GOOGLE DRIVE DENTRO DE SHARED DRIVE
 # =======================================================
@@ -95,6 +96,16 @@ def subir_archivo_drive(nombre_archivo, contenido, mime_type, folder_id, drive_s
     return archivo["id"]
 
 # =======================================================
+#                 CARGAR DATOS
+# =======================================================
+
+@st.cache_data(ttl=20)
+def obtener_dataframe(sheet_form):
+    data = sheet_form.get_all_records()
+    df = pd.DataFrame(data)
+    return df
+
+# =======================================================
 #               ABRIR SPREADSHEETS
 # =======================================================
 
@@ -104,6 +115,8 @@ sheet_form = client.open_by_url(SHEET_FORM_URL).sheet1
 SHEET_LOGIN_URL = "https://docs.google.com/spreadsheets/d/14ByPe5nivtsO1k-lTeJLOY1SPAtqsA9sEQnjArIk4Ik/edit?gid=0#gid=0"
 sheet_users = client.open_by_url(SHEET_LOGIN_URL).worksheet("Login")
 
+if "df_form" not in st.session_state:
+    st.session_state["df_form"] = obtener_dataframe(sheet_form)
 
 # =======================================================
 #                 CARGAR USUARIOS
@@ -113,7 +126,6 @@ def cargar_usuarios(sheet):
     return pd.DataFrame(datos)
 
 df_usuarios = cargar_usuarios(sheet_users)
-
 
 # =======================================================
 #                       LOGIN
@@ -139,10 +151,11 @@ def login(df):
 
         st.error("Credenciales incorrectas")
 
-def obtener_dataframe(sheet):
-    import pandas as pd
-    data = sheet.get_all_records()
-    return pd.DataFrame(data)
+#def obtener_dataframe(sheet):
+ #   import pandas as pd
+  #  data = sheet.get_all_records()
+   # return pd.DataFrame(data)
+
 
 def guardar_dataframe(sheet, df):
     sheet.clear()
@@ -361,8 +374,8 @@ def vista_modificar_siniestro():
     # Buscar siniestro
     busqueda = st.text_input("ESCRIBE NÚMERO DE SINIESTRO")
 
-    df = obtener_dataframe(sheet_form)
-
+    #df = obtener_dataframe(sheet_form)
+    df = st.session_state["df_form"]
     if busqueda:
         resultados = df[df.apply(lambda row: busqueda.lower() in row.astype(str).str.lower().to_string(), axis=1)]
 
