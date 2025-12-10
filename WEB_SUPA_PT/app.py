@@ -99,7 +99,7 @@ def subir_archivo_drive(nombre_archivo, contenido, mime_type, folder_id, drive_s
 #                 CARGAR DATOS
 # =======================================================
 
-@st.cache_data(ttl=20)
+#@st.cache_data(ttl=20)
 def obtener_dataframe(sheet_form):
     data = sheet_form.get_all_records()
     df = pd.DataFrame(data)
@@ -138,8 +138,8 @@ def login(df):
     password = st.text_input("CONTRASEÑA:", type="password")
 
     if st.button("Ingresar"):
-        registros = sheet_users.get_all_records()
-
+        #registros = sheet_users.get_all_records()
+        registros = df_usuarios
         for fila in registros:
             if fila["USUARIO"] == user and fila["PASSWORD"] == password:
                 st.session_state["auth"] = True
