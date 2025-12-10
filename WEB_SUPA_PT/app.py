@@ -118,6 +118,9 @@ sheet_users = client.open_by_url(SHEET_LOGIN_URL).worksheet("Login")
 if "df_form" not in st.session_state:
     st.session_state["df_form"] = obtener_dataframe(sheet_form)
 
+if "form_dirty" not in st.session_state:
+    st.session_state["form_dirty"] = False
+
 # =======================================================
 #                 CARGAR USUARIOS
 # =======================================================
@@ -279,7 +282,8 @@ def panel_seguimiento(df_sel, df, siniestro_id):
 
                 link = f"https://drive.google.com/file/d/{archivo_id}/view"
                 links_archivos.append(link)
-        st.session_state["df_form"] = obtener_dataframe(sheet_form)
+        #st.session_state["df_form"] = obtener_dataframe(sheet_form)
+        st.session_state["form_dirty"] = True
         st.success("Estatus agregado correctamente.")
         st.rerun()
 
@@ -363,7 +367,8 @@ def panel_modificar_datos(df_sel, df, siniestro_id):
         df.loc[mask, "PATENTE"] = patente
 
         guardar_dataframe(sheet_form, df)
-        st.session_state["df_form"] = obtener_dataframe(sheet_form)
+        #st.session_state["df_form"] = obtener_dataframe(sheet_form)
+        st.session_state["form_dirty"] = True
         st.success("Datos actualizados correctamente.")
         st.rerun()
 
@@ -565,17 +570,24 @@ def registro_siniestro():
             #reset_form_registro()
             #st.rerun()
 
-
 def vista_buscar_siniestro():
+
     st.subheader("🔎 Buscar siniestro")
 
-    #siniestro = st.text_input("ESCRIBE NÚMERO DE SINIESTRO:", key="buscar_siniestro_num")
+    # Recargar datos si hubo cambios
+    if st.session_state.get("form_dirty", False):
+        st.session_state["df_form"] = obtener_dataframe(sheet_form)
+        st.session_state["form_dirty"] = False
+
     siniestro = st.text_input("ESCRIBE NÚMERO DE SINIESTRO:")
 
-    #if st.button("Buscar", icon="🔎",use_container_width=True,width=150):
-    if siniestro:
-        datos = sheet_form.get_all_records()
-        df = pd.DataFrame(datos)
+    if st.button("Buscar", icon="🔎", use_container_width=True):
+        
+        if not siniestro:
+            st.warning("Ingresa un número de siniestro.")
+            return
+
+        df = st.session_state["df_form"]
 
         resultado = df[df["# DE SINIESTRO"].astype(str) == str(siniestro)]
 
@@ -584,7 +596,7 @@ def vista_buscar_siniestro():
             return
 
         st.success("Resultado encontrado:")
-        st.dataframe(resultado, use_container_width=True,hide_index=True)
+        st.dataframe(resultado, use_container_width=True, hide_index=True)
 
         # ============================
         #   LINK A DRIVE
@@ -599,13 +611,11 @@ def vista_buscar_siniestro():
                 )
             else:
                 st.info("Este siniestro no tiene un link de Drive registrado.")
+
         else:
             st.info("La columna 'DRIVE' no existe en el registro.")
-    else:
-        st.warning("Ingresa un número de siniestro.")
-        return 
-    # Botón para volver
-    if st.button("Volver al inicio",icon="⬅️"):
+
+    if st.button("Volver al inicio", icon="⬅️"):
         st.session_state.vista = None
         st.rerun()
 
