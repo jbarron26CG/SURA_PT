@@ -213,7 +213,7 @@ def reset_form_registro():
         if key in st.session_state:
             st.session_state[key] = default_value
     if "veh_archivos" in st.session_state:
-            del st.session_state["veh_archivos"]
+        del st.session_state["veh_archivos"]
 
 def limpiar_y_recargar():
     reset_form_registro()
@@ -383,8 +383,9 @@ def vista_modificar_siniestro():
     #df = obtener_dataframe(sheet_form)
     df = st.session_state["df_form"]
     if busqueda:
-        resultados = df[df.apply(lambda row: busqueda.lower() in row.astype(str).str.lower().to_string(), axis=1)]
-
+        #resultados = df[df.apply(lambda row: busqueda.lower() in row.astype(str).str.lower().to_string(), axis=1)]
+        mask = df.apply(lambda r: r.astype(str).str.contains(busqueda, case=False, na=False).any(), axis=1)
+        resultados = df[mask]
         if resultados.empty:
             st.warning("No se encontraron coincidencias.")
             return
