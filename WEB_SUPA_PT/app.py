@@ -382,8 +382,8 @@ def vista_modificar_siniestro():
 
     #df = obtener_dataframe(sheet_form)
     if st.session_state.get("form_dirty", False):
-            st.session_state["df_form"] = obtener_dataframe(sheet_form)
-            st.session_state["form_dirty"] = False
+        st.session_state["df_form"] = obtener_dataframe(sheet_form)
+        st.session_state["form_dirty"] = False
     if busqueda:
         df = st.session_state["df_form"]
         #resultados = df[df.apply(lambda row: busqueda.lower() in row.astype(str).str.lower().to_string(), axis=1)]
