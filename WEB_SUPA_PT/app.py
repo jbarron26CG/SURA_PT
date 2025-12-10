@@ -282,8 +282,8 @@ def panel_seguimiento(df_sel, df, siniestro_id):
 
                 link = f"https://drive.google.com/file/d/{archivo_id}/view"
                 links_archivos.append(link)
-        st.session_state["df_form"] = obtener_dataframe(sheet_form)
-        #st.session_state["form_dirty"] = True
+        #st.session_state["df_form"] = obtener_dataframe(sheet_form)
+        st.session_state["form_dirty"] = True
         st.success("Estatus agregado correctamente.")
         st.rerun()
 
@@ -367,55 +367,85 @@ def panel_modificar_datos(df_sel, df, siniestro_id):
         df.loc[mask, "PATENTE"] = patente
 
         guardar_dataframe(sheet_form, df)
-        st.session_state["df_form"] = obtener_dataframe(sheet_form)
-        #st.session_state["form_dirty"] = True
+        #st.session_state["df_form"] = obtener_dataframe(sheet_form)
+        st.session_state["form_dirty"] = True
         st.success("Datos actualizados correctamente.")
         st.rerun()
-
-
 def vista_modificar_siniestro():
-    
+
     st.subheader("🔍 Buscar siniestro para actualizar")
 
+    # ============================
+    #  1. Recargar DF SOLO si hubo cambios
+    # ============================
     if st.session_state.get("form_dirty", False):
         st.session_state["df_form"] = obtener_dataframe(sheet_form)
         st.session_state["form_dirty"] = False
 
-    # Buscar siniestro
+    # Si aún no está cargado el DF, cargarlo una sola vez
+    if "df_form" not in st.session_state:
+        st.session_state["df_form"] = obtener_dataframe(sheet_form)
+
+    df = st.session_state["df_form"]
+
+    # ============================
+    #  2. Buscar siniestro
+    # ============================
     busqueda = st.text_input("ESCRIBE NÚMERO DE SINIESTRO")
 
-    #df = obtener_dataframe(sheet_form)
-    if busqueda:
-        df = st.session_state["df_form"]
-        #resultados = df[df.apply(lambda row: busqueda.lower() in row.astype(str).str.lower().to_string(), axis=1)]
-        mask = df.apply(lambda r: r.astype(str).str.contains(busqueda, case=False, na=False).any(), axis=1)
-        resultados = df[mask]
-        if resultados.empty:
-            st.warning("No se encontraron coincidencias.")
-            return
+    if not busqueda:
+        st.info("Ingresa un número para buscar un siniestro.")
+        return
 
-        # evitar duplicados
-        siniestros_unicos = resultados["# DE SINIESTRO"].unique()
+    # Coincidencias en cualquier columna
+    mask = df.apply(lambda r: r.astype(str).str.contains(busqueda, case=False, na=False).any(), axis=1)
+    resultados = df[mask]
 
-        seleccionado = st.selectbox("Selecciona un siniestro:", siniestros_unicos)
+    if resultados.empty:
+        st.warning("❌ No se encontraron coincidencias.")
+        return
 
-        if seleccionado:
+    siniestros_unicos = resultados["# DE SINIESTRO"].unique()
 
-            df_sel = df[df["# DE SINIESTRO"] == seleccionado]
+    # ============================
+    #  3. Selección del siniestro
+    # ============================
+    seleccionado = st.selectbox(
+        "Selecciona un siniestro:",
+        siniestros_unicos,
+        key="sel_siniestro"
+    )
 
-            st.success(f"Siniestro seleccionado: {seleccionado}")
+    if not seleccionado:
+        return
 
-            tabs = st.tabs(["✏️ Modificar Datos del Siniestro", "📌 Agregar Estatus (Seguimiento)"])
+    st.session_state["siniestro_actual"] = seleccionado
 
-            with tabs[0]:
-                panel_modificar_datos(df_sel, df, seleccionado)
+    # Crear df_sel siempre actualizado
+    df_sel = df[df["# DE SINIESTRO"] == seleccionado]
 
-            with tabs[1]:
-                panel_seguimiento(df_sel, df, seleccionado)
-            
-    if st.button("Volver al inicio",icon="⬅️",use_container_width=True,width=100):
+    st.success(f"Siniestro seleccionado: {seleccionado}")
+
+    # ============================
+    #  4. Tabs
+    # ============================
+    tab1, tab2 = st.tabs(["✏️ Modificar Datos del Siniestro", "📌 Agregar Estatus (Seguimiento)"])
+
+    with tab1:
+        panel_modificar_datos(df_sel, df, seleccionado)
+
+    with tab2:
+        panel_seguimiento(df_sel, df, seleccionado)
+
+    # ============================
+    #  5. Regresar a inicio
+    # ============================
+    if st.button("Volver al inicio", icon="⬅️", use_container_width=True):
         st.session_state.vista = None
         st.rerun()
+
+
+
 
 def registro_siniestro():
     st.header("Registro de nuevo siniestro")
@@ -579,10 +609,13 @@ def vista_buscar_siniestro():
 
     st.subheader("🔎 Buscar siniestro")
 
-    # Recargar datos si hubo cambios
     if st.session_state.get("form_dirty", False):
         st.session_state["df_form"] = obtener_dataframe(sheet_form)
         st.session_state["form_dirty"] = False
+
+    # Si aún no está cargado el DF, cargarlo una sola vez
+    if "df_form" not in st.session_state:
+        st.session_state["df_form"] = obtener_dataframe(sheet_form)
 
     siniestro = st.text_input("ESCRIBE NÚMERO DE SINIESTRO:")
 
