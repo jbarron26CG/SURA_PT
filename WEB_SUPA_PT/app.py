@@ -10,6 +10,37 @@ from datetime import datetime
 import re
 from zoneinfo import ZoneInfo
 import yagmail
+import time
+
+def cargar_dataframe_rate_limit(sheet_form, cooldown=10):
+    """
+    Carga el DataFrame solo si han pasado X segundos desde la última actualización.
+    cooldown: segundos mínimos entre llamadas reales a Google Sheets.
+    """
+    now = time.time()
+
+    # Si NO existe historial → cargar por primera vez
+    if "last_load_time" not in st.session_state:
+        st.session_state["last_load_time"] = 0
+
+    # Verificar rate limit
+    if now - st.session_state["last_load_time"] < cooldown:
+        # Usar caché existente
+        return st.session_state.get("df_form", pd.DataFrame())
+
+    # Si ya pasó el cooldown → cargar de Sheets
+    data = sheet_form.get_all_values()
+    if not data:
+        df = pd.DataFrame()
+    else:
+        df = pd.DataFrame(data[1:], columns=data[0])
+
+    # Guardar en caché
+    st.session_state["df_form"] = df
+    st.session_state["last_load_time"] = now
+
+    return df
+
 
 
 # =======================================================
@@ -154,11 +185,6 @@ def login(df):
 
         st.error("Credenciales incorrectas")
 
-#def obtener_dataframe(sheet):
- #   import pandas as pd
-  #  data = sheet.get_all_records()
-   # return pd.DataFrame(data)
-
 
 def guardar_dataframe(sheet, df):
     sheet.clear()
@@ -282,8 +308,7 @@ def panel_seguimiento(df_sel, df, siniestro_id):
 
                 link = f"https://drive.google.com/file/d/{archivo_id}/view"
                 links_archivos.append(link)
-        #st.session_state["df_form"] = obtener_dataframe(sheet_form)
-        st.session_state["form_dirty"] = True
+        st.session_state["last_load_time"] = 0
         st.success("Estatus agregado correctamente.")
         st.rerun()
 
@@ -367,8 +392,7 @@ def panel_modificar_datos(df_sel, df, siniestro_id):
         df.loc[mask, "PATENTE"] = patente
 
         guardar_dataframe(sheet_form, df)
-        #st.session_state["df_form"] = obtener_dataframe(sheet_form)
-        st.session_state["form_dirty"] = True
+        st.session_state["last_load_time"] = 0
         st.success("Datos actualizados correctamente.")
         st.rerun()
 def vista_modificar_siniestro():
@@ -378,7 +402,8 @@ def vista_modificar_siniestro():
     # ============================
     #  1. Recargar DF 
     # ============================
-    df = obtener_dataframe(sheet_form)
+    #df = obtener_dataframe(sheet_form)
+    df = cargar_dataframe_rate_limit(sheet_form, cooldown=10)
     # ============================
     #  2. Buscar siniestro
     # ============================
@@ -608,8 +633,8 @@ def vista_buscar_siniestro():
             st.warning("Ingresa un número de siniestro.")
             return
 
-        df = obtener_dataframe(sheet_form)
-
+        #df = obtener_dataframe(sheet_form)
+        df = cargar_dataframe_rate_limit(sheet_form, cooldown=10)
         resultado = df[df["# DE SINIESTRO"].astype(str) == str(siniestro)]
 
         if resultado.empty:
