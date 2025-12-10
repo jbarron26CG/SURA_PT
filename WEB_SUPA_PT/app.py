@@ -282,8 +282,8 @@ def panel_seguimiento(df_sel, df, siniestro_id):
 
                 link = f"https://drive.google.com/file/d/{archivo_id}/view"
                 links_archivos.append(link)
-        #st.session_state["df_form"] = obtener_dataframe(sheet_form)
-        st.session_state["form_dirty"] = True
+        st.session_state["df_form"] = obtener_dataframe(sheet_form)
+        #st.session_state["form_dirty"] = True
         st.success("Estatus agregado correctamente.")
         st.rerun()
 
@@ -367,8 +367,8 @@ def panel_modificar_datos(df_sel, df, siniestro_id):
         df.loc[mask, "PATENTE"] = patente
 
         guardar_dataframe(sheet_form, df)
-        #st.session_state["df_form"] = obtener_dataframe(sheet_form)
-        st.session_state["form_dirty"] = True
+        st.session_state["df_form"] = obtener_dataframe(sheet_form)
+        #st.session_state["form_dirty"] = True
         st.success("Datos actualizados correctamente.")
         st.rerun()
 
