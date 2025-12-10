@@ -148,6 +148,14 @@ def guardar_dataframe(sheet, df):
     sheet.clear()
     sheet.update([df.columns.tolist()] + df.values.tolist())
 
+def agregar_fila(sheet, fila_dict):
+    # Convertimos el diccionario a lista en el orden correcto de columnas
+    columnas = sheet.row_values(1)
+    if not columnas:
+        columnas = list(fila_dict.keys())
+    fila = [fila_dict.get(col, "") for col in columnas]
+
+    sheet.append_row(fila)
 
 
 from datetime import datetime
@@ -234,8 +242,12 @@ def panel_seguimiento(df_sel, df, siniestro_id):
         ref["CORREO LIQUIDADOR"] = st.session_state["USUARIO"]
 
         #df = df.append(ref, ignore_index=True)
-        df = pd.concat([df, pd.DataFrame([ref])], ignore_index=True)
-        guardar_dataframe(sheet_form, df)
+        fila_dict = ref.to_dict()
+
+        # Agregar solo una fila a Google Sheets
+        agregar_fila(sheet_form, fila_dict)
+        #df = pd.concat([df, pd.DataFrame([ref])], ignore_index=True)
+        #guardar_dataframe(sheet_form, df)
 
         if uploaded_files:
         # Obtener o crear carpeta del siniestro
@@ -533,8 +545,7 @@ def registro_siniestro():
                 Propietario_Direccion,
                 Liquidador_Nombre,
                 Usuario_Login,
-                carpeta_link,
-                ", ".join(links_archivos)
+                carpeta_link
             ])
             st.success("✔ Siniestro registrado correctamente.")
             #reset_form_registro()
