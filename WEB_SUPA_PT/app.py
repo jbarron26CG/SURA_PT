@@ -138,8 +138,8 @@ def login(df):
     password = st.text_input("CONTRASEÑA:", type="password")
 
     if st.button("Ingresar"):
-        #registros = sheet_users.get_all_records()
-        registros = df_usuarios
+        registros = sheet_users.get_all_records()
+        #registros = df_usuarios
         for fila in registros:
             if fila["USUARIO"] == user and fila["PASSWORD"] == password:
                 st.session_state["auth"] = True
@@ -279,6 +279,7 @@ def panel_seguimiento(df_sel, df, siniestro_id):
 
                 link = f"https://drive.google.com/file/d/{archivo_id}/view"
                 links_archivos.append(link)
+        st.session_state["df_form"] = obtener_dataframe(sheet_form)
         st.success("Estatus agregado correctamente.")
         st.rerun()
 
@@ -362,7 +363,7 @@ def panel_modificar_datos(df_sel, df, siniestro_id):
         df.loc[mask, "PATENTE"] = patente
 
         guardar_dataframe(sheet_form, df)
-
+        st.session_state["df_form"] = obtener_dataframe(sheet_form)
         st.success("Datos actualizados correctamente.")
         st.rerun()
 
