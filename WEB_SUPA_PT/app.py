@@ -101,8 +101,13 @@ def subir_archivo_drive(nombre_archivo, contenido, mime_type, folder_id, drive_s
 
 #@st.cache_data(ttl=20)
 def obtener_dataframe(sheet_form):
-    data = sheet_form.get_all_records()
-    df = pd.DataFrame(data)
+    #data = sheet_form.get_all_records()
+    #df = pd.DataFrame(data)
+    #return df
+    data = sheet_form.get_all_values()  
+    header = data[0]
+    rows = data[1:]
+    df = pd.DataFrame(rows, columns=header)
     return df
 
 # =======================================================
