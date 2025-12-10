@@ -12,7 +12,7 @@ from zoneinfo import ZoneInfo
 import yagmail
 import time
 
-def cargar_dataframe_rate_limit(sheet_form, cooldown=10):
+def cargar_dataframe_rate_limit(sheet_form, cooldown=15):
     """
     Carga el DataFrame solo si han pasado X segundos desde la última actualización.
     cooldown: segundos mínimos entre llamadas reales a Google Sheets.
@@ -403,7 +403,7 @@ def vista_modificar_siniestro():
     #  1. Recargar DF 
     # ============================
     #df = obtener_dataframe(sheet_form)
-    df = cargar_dataframe_rate_limit(sheet_form, cooldown=10)
+    df = cargar_dataframe_rate_limit(sheet_form, cooldown=15)
     # ============================
     #  2. Buscar siniestro
     # ============================
@@ -634,7 +634,7 @@ def vista_buscar_siniestro():
             return
 
         #df = obtener_dataframe(sheet_form)
-        df = cargar_dataframe_rate_limit(sheet_form, cooldown=10)
+        df = cargar_dataframe_rate_limit(sheet_form, cooldown=15)
         resultado = df[df["# DE SINIESTRO"].astype(str) == str(siniestro)]
 
         if resultado.empty:
