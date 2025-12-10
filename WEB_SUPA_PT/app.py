@@ -101,13 +101,8 @@ def subir_archivo_drive(nombre_archivo, contenido, mime_type, folder_id, drive_s
 
 #@st.cache_data(ttl=20)
 def obtener_dataframe(sheet_form):
-    #data = sheet_form.get_all_records()
-    #df = pd.DataFrame(data)
-    #return df
-    data = sheet_form.get_all_values()  
-    header = data[0]
-    rows = data[1:]
-    df = pd.DataFrame(rows, columns=header)
+    data = sheet_form.get_all_records()
+    df = pd.DataFrame(data)
     return df
 
 # =======================================================
@@ -381,18 +376,9 @@ def vista_modificar_siniestro():
     st.subheader("🔍 Buscar siniestro para actualizar")
 
     # ============================
-    #  1. Recargar DF SOLO si hubo cambios
+    #  1. Recargar DF 
     # ============================
-    if st.session_state.get("form_dirty", False):
-        st.session_state["df_form"] = obtener_dataframe(sheet_form)
-        st.session_state["form_dirty"] = False
-
-    # Si aún no está cargado el DF, cargarlo una sola vez
-    if "df_form" not in st.session_state:
-        st.session_state["df_form"] = obtener_dataframe(sheet_form)
-
-    df = st.session_state["df_form"]
-
+    df = obtener_dataframe(sheet_form)
     # ============================
     #  2. Buscar siniestro
     # ============================
@@ -614,14 +600,6 @@ def vista_buscar_siniestro():
 
     st.subheader("🔎 Buscar siniestro")
 
-    if st.session_state.get("form_dirty", False):
-        st.session_state["df_form"] = obtener_dataframe(sheet_form)
-        st.session_state["form_dirty"] = False
-
-    # Si aún no está cargado el DF, cargarlo una sola vez
-    if "df_form" not in st.session_state:
-        st.session_state["df_form"] = obtener_dataframe(sheet_form)
-
     siniestro = st.text_input("ESCRIBE NÚMERO DE SINIESTRO:")
 
     if st.button("Buscar", icon="🔎", use_container_width=True):
@@ -630,7 +608,7 @@ def vista_buscar_siniestro():
             st.warning("Ingresa un número de siniestro.")
             return
 
-        df = st.session_state["df_form"]
+        df = obtener_dataframe(sheet_form)
 
         resultado = df[df["# DE SINIESTRO"].astype(str) == str(siniestro)]
 
