@@ -263,7 +263,7 @@ def limpiar_y_recargar():
     reset_form_registro()
     #st.rerun()
 
-def panel_seguimiento(df_sel, df, siniestro_id):
+def panel_seguimiento_2(df_sel, df, siniestro_id):
 
     st.subheader("📌 Agregar Estatus (Seguimiento)")
     if "estatus" not in st.session_state:
@@ -341,6 +341,69 @@ def panel_seguimiento(df_sel, df, siniestro_id):
         st.session_state["comentario"] = ""
         st.session_state["upload_counter"] += 1
         
+        st.session_state["last_load_time"] = 0
+        st.success("Estatus agregado correctamente.")
+        st.rerun()
+def panel_seguimiento(df_sel, df, siniestro_id):
+
+    st.subheader("📌 Agregar Estatus (Seguimiento)")
+
+    with st.form("form_seguimiento", clear_on_submit=True):
+
+        nuevo_estatus = st.selectbox(
+            "ESTATUS",
+            [
+                "Seleccionar estatus",
+                "ASIGNADO","CLIENTE CONTACTADO","CARGA DOCUMENTAL RECIBIDA",
+                "DESVIADO A FRAUDES","DOCUMENTACIÓN COMPLETA",
+                "EN ESPERA DE PRIMAS, PÓLIZA Y/O SALDO INSOLUTO",
+                "PROPUESTA ECONÓMICA ENVIADA","PROPUESTA ECONÓMICA ACEPTADA",
+                "DERIVADO A CERO KM","DERIVADO A REPOSICIÓN",
+                "EN ESPERA DE PRIMERA FIRMA",
+                "EN ESPERA DE SEGUNDA FIRMA (ROBO)",
+                "EN ESPERA DE LEGALIZACIÓN","DOCUMENTACIÓN LEGALIZADA",
+                "SOLICITUD DE PAGO GENERADA","PAGO LIBERADO"
+            ]
+        )
+
+        comentario = st.text_area("COMENTARIOS", height=120)
+
+        uploaded_files = st.file_uploader(
+            "Selecciona los archivos",
+            accept_multiple_files=True
+        )
+
+        enviado = st.form_submit_button("💾 Agregar estatus")
+
+    if enviado:
+
+        if nuevo_estatus == "Seleccionar estatus":
+            st.warning("Debes seleccionar un estatus.")
+            return
+
+        ref = df_sel.iloc[-1].copy()
+        ahora = datetime.now(ZoneInfo("America/Mexico_City"))
+
+        ref["FECHA ESTATUS BITÁCORA"] = ahora.strftime("%Y-%m-%d %H:%M:%S")
+        ref["ESTATUS"] = nuevo_estatus
+        ref["COMENTARIO"] = comentario
+        ref["CORREO LIQUIDADOR"] = st.session_state["USUARIO"]
+
+        agregar_fila(sheet_form, ref.to_dict())
+
+        if uploaded_files:
+            nombre_carpeta = f"SINIESTRO_{siniestro_id}"
+            carpeta_id = obtener_o_crear_carpeta(nombre_carpeta, drive_service)
+
+            for archivo in uploaded_files:
+                subir_archivo_drive(
+                    archivo.name,
+                    archivo.read(),
+                    archivo.type,
+                    carpeta_id,
+                    drive_service
+                )
+
         st.session_state["last_load_time"] = 0
         st.success("Estatus agregado correctamente.")
         st.rerun()
