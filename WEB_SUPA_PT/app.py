@@ -266,6 +266,14 @@ def limpiar_y_recargar():
 def panel_seguimiento(df_sel, df, siniestro_id):
 
     st.subheader("📌 Agregar Estatus (Seguimiento)")
+    if "estatus" not in st.session_state:
+        st.session_state["estatus"] = "Seleccionar estatus"
+
+    if "comentario" not in st.session_state:
+        st.session_state["comentario"] = ""
+
+    if "veh_archivos" not in st.session_state:
+        st.session_state["veh_archivos"] = None
 
     #nuevo_estatus = st.text_input("Nuevo estatus del siniestro")
     nuevo_estatus = st.selectbox("ESTATUS",["Seleccionar estatus","ASIGNADO","CLIENTE CONTACTADO","CARGA DOCUMENTAL RECIBIDA",
@@ -332,11 +340,10 @@ def panel_seguimiento(df_sel, df, siniestro_id):
             "estatus": "Seleccionar estatus",
             "comentario": ""
         }
-        for key, default_value in default_values.items():
-            if key in st.session_state:
-                st.session_state[key] = default_value
-        if "veh_archivos" in st.session_state:
-            del st.session_state["veh_archivos"]
+        st.session_state["estatus"] = "Seleccionar estatus"
+        st.session_state["comentario"] = ""
+        st.session_state["veh_archivos"] = None
+        
         st.session_state["last_load_time"] = 0
         st.success("Estatus agregado correctamente.")
         st.rerun()
