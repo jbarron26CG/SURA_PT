@@ -373,7 +373,7 @@ def panel_seguimiento(df_sel, df, siniestro_id):
             accept_multiple_files=True
         )
 
-        enviado = st.form_submit_button("💾 Agregar estatus")
+        enviado = st.form_submit_button("Agregar estatus",icon="💾",use_container_width=True)
 
     if enviado:
 
