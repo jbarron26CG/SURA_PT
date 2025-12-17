@@ -271,6 +271,9 @@ def panel_seguimiento(df_sel, df, siniestro_id):
 
     if "comentario" not in st.session_state:
         st.session_state["comentario"] = ""
+    
+    if "upload_counter" not in st.session_state:
+        st.session_state["upload_counter"] = 0
 
     #nuevo_estatus = st.text_input("Nuevo estatus del siniestro")
     nuevo_estatus = st.selectbox("ESTATUS",["Seleccionar estatus","ASIGNADO","CLIENTE CONTACTADO","CARGA DOCUMENTAL RECIBIDA",
@@ -287,7 +290,7 @@ def panel_seguimiento(df_sel, df, siniestro_id):
         "Selecciona los archivos",
         type=None,
         accept_multiple_files=True,
-        key="veh_archivos"
+        key=f"veh_archivos_{st.session_state['upload_counter']}"
     )
 
     links_archivos = []
@@ -336,8 +339,7 @@ def panel_seguimiento(df_sel, df, siniestro_id):
 
         st.session_state["estatus"] = "Seleccionar estatus"
         st.session_state["comentario"] = ""
-        if "veh_archivos" in st.session_state:
-            del st.session_state["veh_archivos"]
+        st.session_state["upload_counter"] += 1
         
         st.session_state["last_load_time"] = 0
         st.success("Estatus agregado correctamente.")
