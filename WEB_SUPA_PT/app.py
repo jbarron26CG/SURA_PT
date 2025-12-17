@@ -405,7 +405,8 @@ def panel_seguimiento(df_sel, df, siniestro_id):
                 )
 
         st.session_state["last_load_time"] = 0
-        st.success("Estatus agregado correctamente.")
+        st.toast("✅ Estatus agregado correctamente", icon="📌")
+        #st.success("Estatus agregado correctamente.")
         st.rerun()
 
 
