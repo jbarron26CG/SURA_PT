@@ -272,9 +272,6 @@ def panel_seguimiento(df_sel, df, siniestro_id):
     if "comentario" not in st.session_state:
         st.session_state["comentario"] = ""
 
-    if "veh_archivos" not in st.session_state:
-        st.session_state["veh_archivos"] = None
-
     #nuevo_estatus = st.text_input("Nuevo estatus del siniestro")
     nuevo_estatus = st.selectbox("ESTATUS",["Seleccionar estatus","ASIGNADO","CLIENTE CONTACTADO","CARGA DOCUMENTAL RECIBIDA",
                                             "DESVIADO A FRAUDES","DOCUMENTACIÓN COMPLETA","EN ESPERA DE PRIMAS, PÓLIZA Y/O SALDO INSOLUTO",
@@ -336,13 +333,11 @@ def panel_seguimiento(df_sel, df, siniestro_id):
 
                 link = f"https://drive.google.com/file/d/{archivo_id}/view"
                 links_archivos.append(link)
-        default_values = {
-            "estatus": "Seleccionar estatus",
-            "comentario": ""
-        }
+
         st.session_state["estatus"] = "Seleccionar estatus"
         st.session_state["comentario"] = ""
-        st.session_state["veh_archivos"] = None
+        if "veh_archivos" in st.session_state:
+            del st.session_state["veh_archivos"]
         
         st.session_state["last_load_time"] = 0
         st.success("Estatus agregado correctamente.")
