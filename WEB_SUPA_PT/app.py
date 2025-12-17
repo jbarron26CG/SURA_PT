@@ -3,6 +3,7 @@ import pandas as pd
 from google.oauth2.service_account import Credentials
 from googleapiclient.discovery import build
 from googleapiclient.http import MediaIoBaseUpload
+from googleapiclient.errors import HttpError
 import io
 import gspread
 #import datetime
@@ -11,6 +12,23 @@ import re
 from zoneinfo import ZoneInfo
 import yagmail
 import time
+
+def safe_google_call(func, *args, **kwargs):
+    try:
+        return func(*args, **kwargs)
+
+    except (gspread.exceptions.APIError, HttpError) as e:
+
+        # Detectar error por saturación / limite de uso
+        if "quota" in str(e).lower() or "rate limit" in str(e).lower():
+            st.warning("⚠️ Saturación temporal del servicio. Por favor intenta nuevamente en unos segundos.")
+        else:
+            st.error("⚠️ Ocurrió un error inesperado al comunicarse con Google Sheets.")
+
+        # Puedes registrar el error si quieres:
+        # st.write(str(e))
+
+        return None
 
 def cargar_dataframe_rate_limit(sheet_form, cooldown=15):
     """
@@ -250,26 +268,28 @@ def panel_seguimiento(df_sel, df, siniestro_id):
     st.subheader("📌 Agregar Estatus (Seguimiento)")
 
     #nuevo_estatus = st.text_input("Nuevo estatus del siniestro")
-    nuevo_estatus = st.selectbox("ESTATUS",["ASIGNADO","CLIENTE CONTACTADO","CARGA DOCUMENTAL RECIBIDA",
+    nuevo_estatus = st.selectbox("ESTATUS",["Seleccionar estatus","ASIGNADO","CLIENTE CONTACTADO","CARGA DOCUMENTAL RECIBIDA",
                                             "DESVIADO A FRAUDES","DOCUMENTACIÓN COMPLETA","EN ESPERA DE PRIMAS, PÓLIZA Y/O SALDO INSOLUTO",
                                             "PROPUESTA ECONÓMICA ENVIADA","PROPUESTA ECONÓMICA ACEPTADA","DERIVADO A CERO KM",
                                             "DERIVADO A REPOSICIÓN","EN ESPERA DE PRIMERA FIRMA","EN ESPERA DE SEGUNDA FIRMA (ROBO)",
-                                            "EN ESPERA DE LEGALIZACIÓN","DOCUMENTACIÓN LEGALIZADA","SOLICITUD DE PAGO GENERADA","PAGO LIBERADO"])
-    comentario = st.text_area("COMENTARIOS", height=120)
+                                            "EN ESPERA DE LEGALIZACIÓN","DOCUMENTACIÓN LEGALIZADA","SOLICITUD DE PAGO GENERADA","PAGO LIBERADO"],
+                                            key="estatus")
+    comentario = st.text_area("COMENTARIOS", height=120,key="comentario")
 
     st.write("Subir archivos para agregar al expediente del siniestro:")
 
     uploaded_files = st.file_uploader(
         "Selecciona los archivos",
         type=None,
-        accept_multiple_files=True
+        accept_multiple_files=True,
+        key="veh_archivos"
     )
 
     links_archivos = []
 
     if st.button("Agregar estatus",icon="💾",use_container_width=True):
 
-        if not nuevo_estatus:
+        if nuevo_estatus == "Seleccionar estatus":
             st.warning("Debes ingresar un estatus.")
             return
 
@@ -308,6 +328,15 @@ def panel_seguimiento(df_sel, df, siniestro_id):
 
                 link = f"https://drive.google.com/file/d/{archivo_id}/view"
                 links_archivos.append(link)
+        default_values = {
+            "estatus": "Seleccionar estatus",
+            "comentario": ""
+        }
+        for key, default_value in default_values.items():
+            if key in st.session_state:
+                st.session_state[key] = default_value
+        if "veh_archivos" in st.session_state:
+            del st.session_state["veh_archivos"]
         st.session_state["last_load_time"] = 0
         st.success("Estatus agregado correctamente.")
         st.rerun()
