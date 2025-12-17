@@ -189,7 +189,7 @@ def login(df):
     user = st.text_input("USUARIO:")
     password = st.text_input("CONTRASEÑA:", type="password")
 
-    if st.button("Ingresar"):
+    if st.button("Ingresar",use_container_width=True):
         registros = sheet_users.get_all_records()
         #registros = df_usuarios
         for fila in registros:
