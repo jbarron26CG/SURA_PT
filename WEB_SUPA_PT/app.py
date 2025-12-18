@@ -124,6 +124,35 @@ def obtener_o_crear_carpeta(nombre_carpeta, drive_service):
 
     return nueva["id"]
 
+def obtener_carpeta(nombre_carpeta, drive_service):
+    """Busca una carpeta en la unidad compartida.
+    Devuelve el ID si existe, o None si no existe.
+    """
+
+    query = (
+        f"name = '{nombre_carpeta}' "
+        f"and mimeType = 'application/vnd.google-apps.folder' "
+        f"and '{SHARED_DRIVE_ID}' in parents "
+        f"and trashed = false"
+    )
+
+    resultado = drive_service.files().list(
+        q=query,
+        spaces="drive",
+        corpora="drive",
+        driveId=SHARED_DRIVE_ID,
+        includeItemsFromAllDrives=True,
+        supportsAllDrives=True,
+        fields="files(id, name)"
+    ).execute()
+
+    folders = resultado.get("files", [])
+
+    if folders:
+        return folders[0]["id"]
+
+    return None
+
 
 def subir_archivo_drive(nombre_archivo, contenido, mime_type, folder_id, drive_service):
     """Sube un archivo dentro de una carpeta en Shared Drive."""
@@ -281,8 +310,11 @@ def panel_subir_documentos():
     if enviado:
         if uploaded_files:
             nombre_carpeta = f"SINIESTRO_{siniestro_id}"
-            carpeta_id = obtener_o_crear_carpeta(nombre_carpeta, drive_service)
+            carpeta_id = obtener_carpeta(nombre_carpeta, drive_service)
 
+            if carpeta_id is None:
+                st.warning("⚠️ No existe carpeta para este siniestro, verifica información ingresada")
+                return
             for archivo in uploaded_files:
                 subir_archivo_drive(
                     archivo.name,
