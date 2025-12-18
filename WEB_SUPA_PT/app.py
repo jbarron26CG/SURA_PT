@@ -922,6 +922,10 @@ def vista_admin():
 
         if st.button("ACTUALIZAR", use_container_width=True, icon="🔄️"):
             st.session_state.vista = "ACTUALIZAR"
+
+        if st.button("SUBIR ARCHIVOS", use_container_width=True, icon="⬆️"):
+            st.session_state.vista = "CARGA"
+
     with st.sidebar:
         if st.button("BUSCAR / CONSULTAR", use_container_width=True, icon="🔎"):
             st.session_state.vista = "BUSCAR"
@@ -937,6 +941,8 @@ def vista_admin():
 
     elif st.session_state.vista == "ACTUALIZAR":
         vista_modificar_siniestro()
+    elif st.session_state.vista == "CARGA":
+        panel_subir_documentos()
 
     # =====================================================================================
     #                                BUSCAR / ACTUALIZAR
