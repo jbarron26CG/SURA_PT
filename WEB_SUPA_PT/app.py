@@ -265,7 +265,7 @@ def limpiar_y_recargar():
 
 def panel_subir_documentos():
     st.subheader("⬆️ Subir archivos a drive")
-    siniestro_id = st.text_input("ESCRIBE NÚMERO DE SINIESTRO",key="siniestro_input")
+    siniestro_id = st.text_input("ESCRIBE NÚMERO DE SINIESTRO")
 
     if not siniestro_id:
         st.info("Ingresa un número para buscar un siniestro.")
@@ -293,7 +293,6 @@ def panel_subir_documentos():
                 )
         st.toast("Guardando cambios...", icon="⏳",duration=5)
         time.sleep(5)
-        st.session_state["siniestro_input"] = ""
         st.toast("Archivos cargados correctamente", icon="✅")
         st.success("Archivos cargados correctamente", icon="✅")
     
