@@ -299,7 +299,11 @@ def panel_subir_documentos():
     if not siniestro_id:
         st.info("Ingresa un número para buscar un siniestro.")
         return
-    
+    nombre_carpeta = f"SINIESTRO_{siniestro_id}"
+    carpeta_id = obtener_carpeta(nombre_carpeta, drive_service)
+    if carpeta_id is None:
+        st.warning("⚠️ No existe carpeta para este siniestro, verifica información ingresada")
+        return
     with st.form("form_seguimiento", clear_on_submit=True):
         uploaded_files = st.file_uploader(
             "Selecciona los archivos",
@@ -309,12 +313,12 @@ def panel_subir_documentos():
         enviado = st.form_submit_button("Cargar archivos",icon="💾",use_container_width=True)
     if enviado:
         if uploaded_files:
-            nombre_carpeta = f"SINIESTRO_{siniestro_id}"
-            carpeta_id = obtener_carpeta(nombre_carpeta, drive_service)
+            #nombre_carpeta = f"SINIESTRO_{siniestro_id}"
+            #carpeta_id = obtener_carpeta(nombre_carpeta, drive_service)
 
-            if carpeta_id is None:
-                st.warning("⚠️ No existe carpeta para este siniestro, verifica información ingresada")
-                return
+            #if carpeta_id is None:
+             #   st.warning("⚠️ No existe carpeta para este siniestro, verifica información ingresada")
+              #  return
             for archivo in uploaded_files:
                 subir_archivo_drive(
                     archivo.name,
