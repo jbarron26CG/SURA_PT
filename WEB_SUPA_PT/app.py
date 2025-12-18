@@ -263,87 +263,39 @@ def limpiar_y_recargar():
     reset_form_registro()
     #st.rerun()
 
-def panel_seguimiento_2(df_sel, df, siniestro_id):
+def panel_subir_documentos():
+    st.subheader("⬆️ Subir archivos a drive")
+    siniestro_id = st.text_input("ESCRIBE NÚMERO DE SINIESTRO")
 
-    st.subheader("📌 Agregar Estatus (Seguimiento)")
-    if "estatus" not in st.session_state:
-        st.session_state["estatus"] = "Seleccionar estatus"
-
-    if "comentario" not in st.session_state:
-        st.session_state["comentario"] = ""
+    if not siniestro_id:
+        st.info("Ingresa un número para buscar un siniestro.")
+        return
     
-    if "upload_counter" not in st.session_state:
-        st.session_state["upload_counter"] = 0
+    with st.form("form_seguimiento", clear_on_submit=True):
+        uploaded_files = st.file_uploader(
+            "Selecciona los archivos",
+            accept_multiple_files=True
+        )
 
-    #nuevo_estatus = st.text_input("Nuevo estatus del siniestro")
-    nuevo_estatus = st.selectbox("ESTATUS",["Seleccionar estatus","ASIGNADO","CLIENTE CONTACTADO","CARGA DOCUMENTAL RECIBIDA",
-                                            "DESVIADO A FRAUDES","DOCUMENTACIÓN COMPLETA","EN ESPERA DE PRIMAS, PÓLIZA Y/O SALDO INSOLUTO",
-                                            "PROPUESTA ECONÓMICA ENVIADA","PROPUESTA ECONÓMICA ACEPTADA","DERIVADO A CERO KM",
-                                            "DERIVADO A REPOSICIÓN","EN ESPERA DE PRIMERA FIRMA","EN ESPERA DE SEGUNDA FIRMA (ROBO)",
-                                            "EN ESPERA DE LEGALIZACIÓN","DOCUMENTACIÓN LEGALIZADA","SOLICITUD DE PAGO GENERADA","PAGO LIBERADO"],
-                                            key="estatus")
-    comentario = st.text_area("COMENTARIOS", height=120,key="comentario")
-
-    st.write("Subir archivos para agregar al expediente del siniestro:")
-
-    uploaded_files = st.file_uploader(
-        "Selecciona los archivos",
-        type=None,
-        accept_multiple_files=True,
-        key=f"veh_archivos_{st.session_state['upload_counter']}"
-    )
-
-    links_archivos = []
-
-    if st.button("Agregar estatus",icon="💾",use_container_width=True):
-
-        if nuevo_estatus == "Seleccionar estatus":
-            st.warning("Debes ingresar un estatus.")
-            return
-
-        ref = df_sel.iloc[-1].copy()
-        
-        ahora = datetime.now(ZoneInfo("America/Mexico_City"))
-        ref["FECHA ESTATUS BITÁCORA"] = ahora.strftime("%Y-%m-%d %H:%M:%S")
-
-        ref["ESTATUS"] = nuevo_estatus
-        ref["COMENTARIO"] = comentario
-        #["LIQUIDADOR"] = st.session_state["LIQUIDADOR"]
-        ref["CORREO LIQUIDADOR"] = st.session_state["USUARIO"]
-
-        #df = df.append(ref, ignore_index=True)
-        fila_dict = ref.to_dict()
-
-        # Agregar solo una fila a Google Sheets
-        agregar_fila(sheet_form, fila_dict)
-        #df = pd.concat([df, pd.DataFrame([ref])], ignore_index=True)
-        #guardar_dataframe(sheet_form, df)
-
+        enviado = st.form_submit_button("Cargar archivos",icon="💾",use_container_width=True)
+    if enviado:
         if uploaded_files:
-        # Obtener o crear carpeta del siniestro
             nombre_carpeta = f"SINIESTRO_{siniestro_id}"
             carpeta_id = obtener_o_crear_carpeta(nombre_carpeta, drive_service)
 
             for archivo in uploaded_files:
-                # Subir al drive con tu misma función existente
-                archivo_id = subir_archivo_drive(
+                subir_archivo_drive(
                     archivo.name,
                     archivo.read(),
                     archivo.type,
                     carpeta_id,
                     drive_service
                 )
-
-                link = f"https://drive.google.com/file/d/{archivo_id}/view"
-                links_archivos.append(link)
-
-        st.session_state["estatus"] = "Seleccionar estatus"
-        st.session_state["comentario"] = ""
-        st.session_state["upload_counter"] += 1
-        
-        st.session_state["last_load_time"] = 0
-        st.success("Estatus agregado correctamente.")
-        st.rerun()
+        st.toast("Guardando cambios...", icon="⏳",duration=5)
+        time.sleep(5)
+        st.toast("Archivos cargados correctamente", icon="✅")
+        st.success("Archivos cargados correctamente", icon="✅")
+    
 def panel_seguimiento(df_sel, df, siniestro_id):
 
     st.subheader("📌 Agregar Estatus (Seguimiento)")
@@ -918,6 +870,9 @@ def vista_liquidador():
 
         if st.button("ACTUALIZAR", use_container_width=True, icon="🔄️"):
             st.session_state.vista = "ACTUALIZAR"
+
+        if st.button("SUBIR ARCHIVOS", use_container_width=True, icon="⬆️"):
+            st.session_state.vista = "CARGA"
     with st.sidebar:
         if st.button("BUSCAR / CONSULTAR", use_container_width=True, icon="🔎"):
             st.session_state.vista = "BUSCAR"
@@ -933,6 +888,9 @@ def vista_liquidador():
 
     elif st.session_state.vista == "ACTUALIZAR":
         vista_modificar_siniestro()
+    
+    elif st.session_state.vista == "CARGA":
+        panel_subir_documentos()
 
     elif st.session_state.vista == "BUSCAR":
         vista_buscar_siniestro()
