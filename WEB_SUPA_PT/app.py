@@ -4,6 +4,7 @@ from google.oauth2.service_account import Credentials
 from googleapiclient.discovery import build
 from googleapiclient.http import MediaIoBaseUpload
 from googleapiclient.errors import HttpError
+from gspread.exceptions import APIError
 import io
 import gspread
 #import datetime
@@ -188,7 +189,13 @@ def obtener_dataframe(sheet_form):
 # =======================================================
 
 SHEET_FORM_URL = "https://docs.google.com/spreadsheets/d/1N968vVRp3VfX8r1sRdUA8bdeMxx6Ldjj_a4_coah_BY/edit?gid=0#gid=0"
-sheet_form = client.open_by_url(SHEET_FORM_URL).sheet1
+#sheet_form = client.open_by_url(SHEET_FORM_URL).sheet1
+try:
+    sheet_form = client.open_by_url(SHEET_FORM_URL).sheet1
+except APIError:
+    st.warning("La API de Google Sheets está saturada. Intenta de nuevo en unos minutos.")
+    time.sleep(5)
+    st.stop()
 
 SHEET_LOGIN_URL = "https://docs.google.com/spreadsheets/d/14ByPe5nivtsO1k-lTeJLOY1SPAtqsA9sEQnjArIk4Ik/edit?gid=0#gid=0"
 sheet_users = client.open_by_url(SHEET_LOGIN_URL).worksheet("Login")
