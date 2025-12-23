@@ -48,7 +48,13 @@ def cargar_dataframe_rate_limit(sheet_form, cooldown=15):
         return st.session_state.get("df_form", pd.DataFrame())
 
     # Si ya pasó el cooldown → cargar de Sheets
-    data = sheet_form.get_all_values()
+    #data = sheet_form.get_all_values()
+    try:
+        data = sheet_form.get_all_values()
+    except APIError:
+        st.warning("La API de Google Sheets está saturada. Intenta de nuevo en unos minutos.")
+        time.sleep(5)
+        st.stop()
     if not data:
         df = pd.DataFrame()
     else:
