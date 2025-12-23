@@ -180,8 +180,15 @@ def subir_archivo_drive(nombre_archivo, contenido, mime_type, folder_id, drive_s
 
 #@st.cache_data(ttl=20)
 def obtener_dataframe(sheet_form):
-    data = sheet_form.get_all_records()
-    df = pd.DataFrame(data)
+    #data = sheet_form.get_all_records()
+    #df = pd.DataFrame(data)
+    try:
+        data = sheet_form.get_all_records()
+        df = pd.DataFrame(data)
+    except APIError:
+        st.warning("La API de Google Sheets está saturada. Intenta de nuevo en unos minutos.")
+        time.sleep(5)
+        st.stop()
     return df
 
 # =======================================================
@@ -764,7 +771,13 @@ def vista_descargas():
     st.subheader("📥 Descargas")
 
     # --- Cargar datos del sheet ---
-    df = pd.DataFrame(sheet_form.get_all_records())
+    #df = pd.DataFrame(sheet_form.get_all_records())
+    try:
+        df = pd.DataFrame(sheet_form.get_all_records())
+    except APIError:
+        st.warning("La API de Google Sheets está saturada. Intenta de nuevo en unos minutos.")
+        time.sleep(5)
+        st.stop()
 
     st.write("Selecciona el tipo de bitácora a descargar.")
 
