@@ -183,8 +183,6 @@ def subir_archivo_drive(nombre_archivo, contenido, mime_type, folder_id, drive_s
 # =======================================================
 #                 CARGAR DATOS
 # =======================================================
-
-#@st.cache_data(ttl=20)
 def obtener_dataframe(sheet_form):
     #data = sheet_form.get_all_records()
     #df = pd.DataFrame(data)
@@ -436,6 +434,7 @@ def panel_modificar_datos(df_sel, df, siniestro_id):
         fecha_siniestro = st.date_input("Fecha del siniestro", pd.to_datetime(ref["FECHA SINIESTRO"]))
         lugar = st.text_input("Lugar del siniestro", ref["LUGAR SINIESTRO"])
         medio = st.selectbox("Medio de asignación", ["Call center", "PP", "ALMA"], index=["Call center","PP","ALMA"].index(ref["MEDIO ASIGNACIÓN"]))
+        Cobertura = st.selectbox("Cobertura", ["Robo", "Daño material"], ref["COBERTURA"])
 
     # Datos asegurado
     with st.expander("DATOS DEL ASEGURADO", expanded=False):
@@ -470,12 +469,16 @@ def panel_modificar_datos(df_sel, df, siniestro_id):
 
     if st.button("💾 Guardar cambios"):
         mask = df["# DE SINIESTRO"] == siniestro_id
+        if mask.any():
+            fecha_creacion = df.loc[mask, "FECHA CREACIÓN"].iloc[0]
 
         df.loc[mask, "# DE SINIESTRO"] = num_siniestro
+        df.loc[mask, "FECHA CREACIÓN"] = fecha_creacion
         df.loc[mask, "CORRELATIVO"] = correlativo
         df.loc[mask, "FECHA SINIESTRO"] = fecha_siniestro.strftime("%Y-%m-%d")
         df.loc[mask, "LUGAR SINIESTRO"] = lugar
         df.loc[mask, "MEDIO ASIGNACIÓN"] = medio
+        df.loc[mask, "COBERTURA"] = Cobertura
 
         df.loc[mask, "NOMBRE ASEGURADO"] = asegurado_nombre
         df.loc[mask, "RUT ASEGURADO"] = asegurado_rut
@@ -511,7 +514,13 @@ def vista_modificar_siniestro():
     #  1. Recargar DF 
     # ============================
     #df = obtener_dataframe(sheet_form)
-    df = cargar_dataframe_rate_limit(sheet_form, cooldown=15)
+    #df = cargar_dataframe_rate_limit(sheet_form, cooldown=15)
+    try:
+        df = cargar_dataframe_rate_limit(sheet_form, cooldown=15)
+    except APIError:
+        st.warning("La API de Google Sheets está saturada. Intenta de nuevo en unos minutos.")
+        time.sleep(5)
+        st.stop()
     # ============================
     #  2. Buscar siniestro
     # ============================
@@ -596,6 +605,7 @@ def registro_siniestro():
                 ["Call center", "PP", "ALMA"],
                 key="siniestro_medio"
             )
+            Cobertura = st.selectbox("Cobertura", ["Robo", "Daño material"],key="Cobertura")
 
         # ---------------------- DATOS ASEGURADO -------------------------
         with tabs[1]:
@@ -700,6 +710,7 @@ def registro_siniestro():
                 FechaSiniestro.strftime("%Y-%m-%d"),
                 Lugar,
                 Medio,
+                Cobertura,
                 Marca,
                 Submarca,
                 Version,
@@ -707,6 +718,7 @@ def registro_siniestro():
                 Serie,
                 Motor,
                 Patente,
+                datetime.now(ZoneInfo("America/Mexico_City")).strftime("%Y-%m-%d"),
                 datetime.now(ZoneInfo("America/Mexico_City")).strftime("%Y-%m-%d %H:%M:%S"),
                 "ALTA SINIESTRO",
                 Asegurado_Nombre,
@@ -742,7 +754,13 @@ def vista_buscar_siniestro():
             return
 
         #df = obtener_dataframe(sheet_form)
-        df = cargar_dataframe_rate_limit(sheet_form, cooldown=15)
+        #df = cargar_dataframe_rate_limit(sheet_form, cooldown=15)
+        try:
+            df = cargar_dataframe_rate_limit(sheet_form, cooldown=15)
+        except APIError:
+            st.warning("La API de Google Sheets está saturada. Intenta de nuevo en unos minutos.")
+            time.sleep(5)
+            st.stop()
         resultado = df[df["# DE SINIESTRO"].astype(str) == str(siniestro)]
 
         if resultado.empty:
