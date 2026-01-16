@@ -434,7 +434,7 @@ def panel_modificar_datos(df_sel, df, siniestro_id):
         fecha_siniestro = st.date_input("Fecha del siniestro", pd.to_datetime(ref["FECHA SINIESTRO"]))
         lugar = st.text_input("Lugar del siniestro", ref["LUGAR SINIESTRO"])
         medio = st.selectbox("Medio de asignación", ["Call center", "PP", "ALMA"], index=["Call center","PP","ALMA"].index(ref["MEDIO ASIGNACIÓN"]))
-        Cobertura = st.selectbox("Cobertura", ["Robo", "Daño material"], ref["COBERTURA"])
+        Cobertura = st.selectbox("Cobertura", ["Robo", "Daño material"], index=["Robo", "Daño material"].index(ref["COBERTURA"]))
 
     # Datos asegurado
     with st.expander("DATOS DEL ASEGURADO", expanded=False):
@@ -644,7 +644,7 @@ def registro_siniestro():
             Marca = st.text_input("Marca", key="veh_marca")
             Submarca = st.text_input("Submarca", key="veh_submarca")
             Version = st.text_input("Versión", key="veh_version")
-            AñoModelo = st.number_input("Año/Modelo", min_value=1900, max_value=2050, key="veh_anio")
+            AñoModelo = st.number_input("Año/Modelo", max_value=3050, key="veh_anio")
             Serie = st.text_input("Número de serie", key="veh_serie")
             Motor = st.text_input("Motor", key="veh_motor")
             Patente = st.text_input("Patente", key="veh_patente")
