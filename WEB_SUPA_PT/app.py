@@ -504,7 +504,11 @@ def panel_modificar_datos(df_sel, df, siniestro_id):
 
         guardar_dataframe(sheet_form, df)
         st.session_state["last_load_time"] = 0
-        st.success("Datos actualizados correctamente.")
+        #st.success("Datos actualizados correctamente.")
+        st.toast("Guardando cambios...", icon="⏳",duration=5)
+        time.sleep(5)
+        st.toast("Archivos cargados correctamente", icon="✅")
+        st.success("Datos actualizados correctamente.", icon="✅")
         st.rerun()
 def vista_modificar_siniestro():
 
@@ -644,7 +648,7 @@ def registro_siniestro():
             Marca = st.text_input("Marca", key="veh_marca")
             Submarca = st.text_input("Submarca", key="veh_submarca")
             Version = st.text_input("Versión", key="veh_version")
-            AñoModelo = st.number_input("Año/Modelo", max_value=3050, key="veh_anio")
+            AñoModelo = st.text_input("Año/Modelo", key="veh_anio")
             Serie = st.text_input("Número de serie", key="veh_serie")
             Motor = st.text_input("Motor", key="veh_motor")
             Patente = st.text_input("Patente", key="veh_patente")
@@ -737,7 +741,11 @@ def registro_siniestro():
                 Usuario_Login,
                 carpeta_link
             ])
-            st.success("✔ Siniestro registrado correctamente.")
+            #st.success("✔ Siniestro registrado correctamente.")
+            st.toast("Guardando cambios...", icon="⏳",duration=5)
+            time.sleep(5)
+            st.toast("Archivos cargados correctamente", icon="✅")
+            st.success("Siniestro registrado correctamente.", icon="✅")
             #reset_form_registro()
             #st.rerun()
 
