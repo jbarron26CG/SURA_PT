@@ -507,8 +507,8 @@ def panel_modificar_datos(df_sel, df, siniestro_id):
         #st.success("Datos actualizados correctamente.")
         st.toast("Guardando cambios...", icon="⏳",duration=5)
         time.sleep(5)
-        st.toast("Archivos cargados correctamente", icon="✅")
-        st.success("Datos actualizados correctamente.", icon="✅")
+        st.toast("Datos actualizados correctamente", icon="✅")
+        st.success("Datos actualizados correctamente", icon="✅")
         st.rerun()
 def vista_modificar_siniestro():
 
@@ -744,8 +744,8 @@ def registro_siniestro():
             #st.success("✔ Siniestro registrado correctamente.")
             st.toast("Guardando cambios...", icon="⏳",duration=5)
             time.sleep(5)
-            st.toast("Archivos cargados correctamente", icon="✅")
-            st.success("Siniestro registrado correctamente.", icon="✅")
+            st.toast("Siniestro registrado correctamente", icon="✅")
+            st.success("Siniestro registrado correctamente", icon="✅")
             #reset_form_registro()
             #st.rerun()
 
