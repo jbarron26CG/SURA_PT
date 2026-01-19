@@ -368,7 +368,9 @@ def panel_seguimiento(df_sel, df, siniestro_id):
                 "EN ESPERA DE PRIMERA FIRMA",
                 "EN ESPERA DE SEGUNDA FIRMA (ROBO)",
                 "EN ESPERA DE LEGALIZACIÓN","DOCUMENTACIÓN LEGALIZADA",
-                "SOLICITUD DE PAGO GENERADA","PAGO LIBERADO"
+                "SOLICITUD DE PAGO GENERADA","PAGO LIBERADO",
+                "CIERRE POR DESISTIMIENTO","CIERRE POR RECHAZO",
+                "DERIVADO A PARCIALES"
             ]
         )
 
