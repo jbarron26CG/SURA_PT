@@ -436,7 +436,7 @@ def panel_modificar_datos(df_sel, df, siniestro_id):
         fecha_siniestro = st.date_input("Fecha del siniestro", pd.to_datetime(ref["FECHA SINIESTRO"]))
         lugar = st.text_input("Lugar del siniestro", ref["LUGAR SINIESTRO"])
         medio = st.selectbox("Medio de asignación", ["Call center", "PP", "ALMA"], index=["Call center","PP","ALMA"].index(ref["MEDIO ASIGNACIÓN"]))
-        Cobertura = st.selectbox("Cobertura", ["","Robo", "Daño material"], index=["Robo", "Daño material"].index(ref["COBERTURA"]))
+        Cobertura = st.selectbox("Cobertura", ["","Robo", "Daño material"], index=["","Robo", "Daño material"].index(ref["COBERTURA"]))
 
     # Datos asegurado
     with st.expander("DATOS DEL ASEGURADO", expanded=False):
