@@ -7,66 +7,23 @@ from googleapiclient.errors import HttpError
 from gspread.exceptions import APIError
 import io
 import gspread
+import bcrypt
 #import datetime
 from datetime import datetime
 import re
 from zoneinfo import ZoneInfo
 import yagmail
 import time
+from supabase import create_client
+from openpyxl.styles import PatternFill, Font, Alignment
+from openpyxl.utils import get_column_letter
+import altair as alt
+import numpy as np
 
-def safe_google_call(func, *args, **kwargs):
-    try:
-        return func(*args, **kwargs)
-
-    except (gspread.exceptions.APIError, HttpError) as e:
-
-        # Detectar error por saturación / limite de uso
-        if "quota" in str(e).lower() or "rate limit" in str(e).lower():
-            st.warning("⚠️ Saturación temporal del servicio. Por favor intenta nuevamente en unos segundos.")
-        else:
-            st.error("⚠️ Ocurrió un error inesperado al comunicarse con Google Sheets.")
-
-        # Puedes registrar el error si quieres:
-        # st.write(str(e))
-
-        return None
-
-def cargar_dataframe_rate_limit(sheet_form, cooldown=15):
-    """
-    Carga el DataFrame solo si han pasado X segundos desde la última actualización.
-    cooldown: segundos mínimos entre llamadas reales a Google Sheets.
-    """
-    now = time.time()
-
-    # Si NO existe historial → cargar por primera vez
-    if "last_load_time" not in st.session_state:
-        st.session_state["last_load_time"] = 0
-
-    # Verificar rate limit
-    if now - st.session_state["last_load_time"] < cooldown:
-        # Usar caché existente
-        return st.session_state.get("df_form", pd.DataFrame())
-
-    # Si ya pasó el cooldown → cargar de Sheets
-    #data = sheet_form.get_all_values()
-    try:
-        data = sheet_form.get_all_values()
-    except APIError:
-        st.warning("La API de Google Sheets está saturada. Intenta de nuevo en unos minutos.")
-        time.sleep(5)
-        st.stop()
-    if not data:
-        df = pd.DataFrame()
-    else:
-        df = pd.DataFrame(data[1:], columns=data[0])
-
-    # Guardar en caché
-    st.session_state["df_form"] = df
-    st.session_state["last_load_time"] = now
-
-    return df
-
-
+supabase = create_client(
+    st.secrets["SUPABASE_URL"],
+    st.secrets["SUPABASE_KEY"]
+)
 
 # =======================================================
 #             CONFIGURAR CREDENCIALES
@@ -90,7 +47,11 @@ drive_service = build("drive", "v3", credentials=creds)
 #     FUNCIONES PARA GOOGLE DRIVE DENTRO DE SHARED DRIVE
 # =======================================================
 
-SHARED_DRIVE_ID = "0AMe71RDJTYcGUk9PVA"   # ← tu unidad compartida
+#id de pruebas
+#SHARED_DRIVE_ID = "0AMMvXls255mTUk9PVA"   # ← tu unidad compartida
+
+#ID unidad real
+SHARED_DRIVE_ID = "0AMe71RDJTYcGUk9PVA"
 
 def obtener_o_crear_carpeta(nombre_carpeta, drive_service):
     """Busca o crea carpeta en la unidad compartida."""
@@ -181,91 +142,51 @@ def subir_archivo_drive(nombre_archivo, contenido, mime_type, folder_id, drive_s
     return archivo["id"]
 
 # =======================================================
-#                 CARGAR DATOS
-# =======================================================
-def obtener_dataframe(sheet_form):
-    #data = sheet_form.get_all_records()
-    #df = pd.DataFrame(data)
-    try:
-        data = sheet_form.get_all_records()
-        df = pd.DataFrame(data)
-    except APIError:
-        st.warning("La API de Google Sheets está saturada. Intenta de nuevo en unos minutos.")
-        time.sleep(5)
-        st.stop()
-    return df
-
-# =======================================================
-#               ABRIR SPREADSHEETS
-# =======================================================
-
-SHEET_FORM_URL = "https://docs.google.com/spreadsheets/d/1N968vVRp3VfX8r1sRdUA8bdeMxx6Ldjj_a4_coah_BY/edit?gid=0#gid=0"
-#sheet_form = client.open_by_url(SHEET_FORM_URL).sheet1
-try:
-    sheet_form = client.open_by_url(SHEET_FORM_URL).sheet1
-except APIError:
-    st.warning("La API de Google Sheets está saturada. Intenta de nuevo en unos minutos.")
-    time.sleep(5)
-    st.stop()
-
-SHEET_LOGIN_URL = "https://docs.google.com/spreadsheets/d/14ByPe5nivtsO1k-lTeJLOY1SPAtqsA9sEQnjArIk4Ik/edit?gid=0#gid=0"
-sheet_users = client.open_by_url(SHEET_LOGIN_URL).worksheet("Login")
-
-if "df_form" not in st.session_state:
-    st.session_state["df_form"] = obtener_dataframe(sheet_form)
-
-if "form_dirty" not in st.session_state:
-    st.session_state["form_dirty"] = False
-
-# =======================================================
-#                 CARGAR USUARIOS
-# =======================================================
-def cargar_usuarios(sheet):
-    datos = sheet.get_all_records()
-    return pd.DataFrame(datos)
-
-df_usuarios = cargar_usuarios(sheet_users)
-
-# =======================================================
 #                       LOGIN
 # =======================================================
-def login(df):
+def login():
 
     st.title("Inicio de Sesión")
 
     user = st.text_input("USUARIO:")
     password = st.text_input("CONTRASEÑA:", type="password")
 
-    if st.button("Ingresar",use_container_width=True):
-        registros = sheet_users.get_all_records()
-        #registros = df_usuarios
-        for fila in registros:
-            if fila["USUARIO"] == user and fila["PASSWORD"] == password:
-                st.session_state["auth"] = True
-                st.session_state["USUARIO"] = fila["USUARIO"]
-                st.session_state["LIQUIDADOR"] = fila["LIQUIDADOR"]
-                st.session_state["ROL"] = fila["ROL"]
-                st.success("Acceso exitoso.")
-                st.rerun()
+    if user or password:
+        ingreso = st.button("Ingresar",use_container_width=True)
+        if ingreso:
+            if not user or not password:
+                st.warning("Ingresa usurio y contraseña")
+                return
+            response = (
+                supabase
+                .table("Login")
+                .select("USUARIO","PASSWORD","ROL","LIQUIDADOR")
+                .eq("USUARIO",user)
+                .limit(1)
+                .execute()
+            )
 
-        st.error("Credenciales incorrectas")
+            if not response.data:
+                st.error("Usuario o contraseña incorrectos")
+                return
+            
+            registro = response.data[0]
 
+            flag_psw = bcrypt.checkpw(password.encode("utf-8"), registro["PASSWORD"].encode("utf-8"))
+            time.sleep(1)
+            if not flag_psw:
+                st.error("Usuario o contraseña incorrectos.")
+                return
+            st.session_state["USUARIO"] = registro["USUARIO"]
+            st.session_state["ROL"] = registro["ROL"]
+            st.session_state["LIQUIDADOR"] = registro["LIQUIDADOR"]
+            st.session_state["auth"] = True
 
-def guardar_dataframe(sheet, df):
-    sheet.clear()
-    sheet.update([df.columns.tolist()] + df.values.tolist())
+            st.success(f"Acceso exitoso")
+            st.rerun()
+    else:
+        ingreso = st.button("Ingresar",use_container_width=True,disabled=True)
 
-def agregar_fila(sheet, fila_dict):
-    # Convertimos el diccionario a lista en el orden correcto de columnas
-    columnas = sheet.row_values(1)
-    if not columnas:
-        columnas = list(fila_dict.keys())
-    fila = [fila_dict.get(col, "") for col in columnas]
-
-    sheet.append_row(fila)
-
-
-from datetime import datetime
 
 def reset_form_registro():
     """Reinicia los valores del formulario de registro de siniestro en st.session_state."""
@@ -277,6 +198,7 @@ def reset_form_registro():
         "siniestro_fecha": datetime.today().date(),
         "siniestro_lugar": "",
         "siniestro_medio": "Call center",
+        "Cobertura":"",
         "aseg_nombre": "",
         "aseg_rut": "",
         "aseg_tipo": "",
@@ -292,7 +214,7 @@ def reset_form_registro():
         "veh_marca": "",
         "veh_submarca": "",
         "veh_version": "",
-        "veh_anio": 1900,
+        "veh_anio": "",
         "veh_serie": "",
         "veh_motor": "",
         "veh_patente": "" 
@@ -308,7 +230,7 @@ def reset_form_registro():
 
 def limpiar_y_recargar():
     reset_form_registro()
-    #st.rerun()
+
 
 def panel_subir_documentos():
     st.subheader("⬆️ Subir archivos a drive")
@@ -331,12 +253,6 @@ def panel_subir_documentos():
         enviado = st.form_submit_button("Cargar archivos",icon="💾",use_container_width=True)
     if enviado:
         if uploaded_files:
-            #nombre_carpeta = f"SINIESTRO_{siniestro_id}"
-            #carpeta_id = obtener_carpeta(nombre_carpeta, drive_service)
-
-            #if carpeta_id is None:
-             #   st.warning("⚠️ No existe carpeta para este siniestro, verifica información ingresada")
-              #  return
             for archivo in uploaded_files:
                 subir_archivo_drive(
                     archivo.name,
@@ -345,15 +261,20 @@ def panel_subir_documentos():
                     carpeta_id,
                     drive_service
                 )
-        st.toast("Guardando cambios...", icon="⏳",duration=5)
-        time.sleep(5)
+        st.toast("Guardando cambios...", icon="⏳",duration=1)
+        time.sleep(1)
         st.toast("Archivos cargados correctamente", icon="✅")
         st.success("Archivos cargados correctamente", icon="✅")
     
-def panel_seguimiento(df_sel, df, siniestro_id):
-
+def panel_seguimiento(siniestro_id):
     st.subheader("📌 Agregar Estatus (Seguimiento)")
-
+    response = (
+        supabase
+        .table("BitacoraOperaciones")
+        .select("*")
+        .eq("NUM_SINIESTRO",siniestro_id)
+        .execute()
+    )
     with st.form("form_seguimiento", clear_on_submit=True):
 
         nuevo_estatus = st.selectbox(
@@ -388,16 +309,15 @@ def panel_seguimiento(df_sel, df, siniestro_id):
         if nuevo_estatus == "Seleccionar estatus":
             st.warning("Debes seleccionar un estatus.")
             return
-
-        ref = df_sel.iloc[-1].copy()
+        ref = response.data[-1]
         ahora = datetime.now(ZoneInfo("America/Mexico_City"))
 
-        ref["FECHA ESTATUS BITÁCORA"] = ahora.strftime("%Y-%m-%d %H:%M:%S")
+        ref["FECHA_ESTATUS_BITACORA"] = ahora.strftime("%Y-%m-%d %H:%M:%S")
         ref["ESTATUS"] = nuevo_estatus
         ref["COMENTARIO"] = comentario
-        ref["CORREO LIQUIDADOR"] = st.session_state["USUARIO"]
+        ref["CORREO_LIQUIDADOR"] = st.session_state["USUARIO"]
 
-        agregar_fila(sheet_form, ref.to_dict())
+        supabase.table("BitacoraOperaciones").insert(ref).execute()
 
         if uploaded_files:
             nombre_carpeta = f"SINIESTRO_{siniestro_id}"
@@ -413,172 +333,149 @@ def panel_seguimiento(df_sel, df, siniestro_id):
                 )
 
         st.session_state["last_load_time"] = 0
-        st.toast("Guardando cambios...", icon="⏳",duration=5)
-        time.sleep(5)
-        st.toast("Estatus agregado correctamente", icon="✅")
+        st.toast("Guardando cambios...", icon="⏳",duration=1)
+        time.sleep(1)
+        st.toast("Estatus agregado correctamente", icon="✅",duration=1)
         st.success("Estatus agregado correctamente", icon="✅")
-        time.sleep(3)
+        time.sleep(1)
         st.rerun()
 
 
-def panel_modificar_datos(df_sel, df, siniestro_id):
+def panel_modificar_datos(siniestro_id):
 
     st.subheader("✏️ Modificar Datos")
 
     # Usamos la primera fila como referencia
-    ref = df_sel.iloc[0]
-
+    response = (
+        supabase
+        .table("BitacoraOperaciones")
+        .select("*")
+        .eq("NUM_SINIESTRO",siniestro_id)
+        .execute()
+    )
+    ref = response.data[-1]
+    fecha_creacion = ref["FECHA_CREACION"]
     # Campos a editar
     with st.expander("DATOS DEL SINIESTRO", expanded=False):
-    #num_siniestro = st.text_input("Número de siniestro", ref["# DE SINIESTRO"])
         num_siniestro = siniestro_id
         correlativo = st.text_input("Correlativo", ref["CORRELATIVO"])
-        fecha_siniestro = st.date_input("Fecha del siniestro", pd.to_datetime(ref["FECHA SINIESTRO"]))
-        lugar = st.text_input("Lugar del siniestro", ref["LUGAR SINIESTRO"])
-        medio = st.selectbox("Medio de asignación", ["Call center", "PP", "ALMA"], index=["Call center","PP","ALMA"].index(ref["MEDIO ASIGNACIÓN"]))
-        Cobertura = st.selectbox("Cobertura", ["","Robo", "Daño material"], index=["","Robo", "Daño material"].index(ref["COBERTURA"]))
+        fecha_siniestro = st.date_input("Fecha del siniestro", pd.to_datetime(ref["FECHA_SINIESTRO"]))
+        lugar = st.text_input("Lugar del siniestro", ref["LUGAR_SINIESTRO"])
+        medio = st.selectbox("Medio de asignación", ["Call center", "PP", "ALMA"], index=["Call center","PP","ALMA"].index(ref.get("MEDIO") or ""))
+        Cobertura = st.selectbox("Cobertura", ["","Robo", "Daño material"], index=["","Robo", "Daño material"].index(ref.get("COBERTURA") or ""))
 
     # Datos asegurado
     with st.expander("DATOS DEL ASEGURADO", expanded=False):
-        asegurado_nombre = st.text_input("Nombre asegurado", ref["NOMBRE ASEGURADO"])
-        asegurado_rut = st.text_input("RUT asegurado", ref["RUT ASEGURADO"])
-        #asegurado_tipo = st.text_input("Tipo persona asegurado", ref["TIPO DE PERSONA ASEGURADO"])
-        asegurado_tipo = st.selectbox("Tipo persona asegurado", ["","Jurídica", "Natural"], index=["","Jurídica", "Natural"].index(ref["TIPO DE PERSONA ASEGURADO"]))
-        asegurado_tel = st.text_input("Teléfono asegurado", ref["TEL. ASEGURADO"])
-        asegurado_correo = st.text_input("Correo asegurado", ref["CORREO ASEGURADO"])
-        asegurado_dir = st.text_input("Dirección asegurado", ref["DIRECCIÓN ASEGURADO"])
-        #medio = st.selectbox("Medio de asignación", ["Call center", "PP", "Otro"], index=["Call center","PP","Otro"].index(ref["MEDIO ASIGNACIÓN"]))
+        asegurado_nombre = st.text_input("Nombre asegurado", ref["NOMBRE_ASEGURADO"])
+        asegurado_rut = st.text_input("RUT asegurado", ref["RUT_ASEGURADO"])
+        asegurado_tipo = st.selectbox("Tipo persona asegurado", ["","Jurídica", "Natural"], index=["","Jurídica", "Natural"].index(ref.get("TIPO_DE_PERSONA_ASEGURADO") or ""))
+        asegurado_tel = st.text_input("Teléfono asegurado", ref["TEL_ASEGURADO"])
+        asegurado_correo = st.text_input("Correo asegurado", ref["CORREO_ASEGURADO"])
+        asegurado_dir = st.text_input("Dirección asegurado", ref["DIRECCION_ASEGURADO"])
 
     # Datos propietario
     with st.expander("DATOS DEL PROPIETARIO", expanded=False):
-        propietario_nombre = st.text_input("Nombre propietario", ref["NOMBRE PROPIETARIO"])
-        propietario_rut = st.text_input("RUT propietario", ref["RUT PROPIETARIO"])
-        #propietario_tipo = st.text_input("Tipo persona propietario", ref["TIPO DE PERSONA PROPIETARIO"])
-        propietario_tipo = st.selectbox("Tipo persona propietario", ["","Jurídica", "Natural"], index=["","Jurídica", "Natural"].index(ref["TIPO DE PERSONA PROPIETARIO"]))
-        propietario_tel = st.text_input("Tel. propietario", ref["TEL. PROPIETARIO"])
-        propietario_correo = st.text_input("Correo propietario", ref["CORREO PROPIETARIO"])
-        propietario_dir = st.text_input("Dirección propietario", ref["DIRECCIÓN PROPIETARIO"])
+        propietario_nombre = st.text_input("Nombre propietario", ref["NOMBRE_PROPIETARIO"])
+        propietario_rut = st.text_input("RUT propietario", ref["RUT_PROPIETARIO"])
+        propietario_tipo = st.selectbox("Tipo persona propietario", ["","Jurídica", "Natural"], index=["","Jurídica", "Natural"].index(ref.get("TIPO_DE_PERSONA_PROPIETARIO") or ""))
+        propietario_tel = st.text_input("Tel. propietario", ref["TEL_PROPIETARIO"])
+        propietario_correo = st.text_input("Correo propietario", ref["CORREO_PROPIETARIO"])
+        propietario_dir = st.text_input("Dirección propietario", ref["DIRECCION_PROPIETARIO"])
 
     # Datos vehículo
     with st.expander("DATOS DEL VEHÍCULO", expanded=False):
         marca = st.text_input("Marca", ref["MARCA"])
         submarca = st.text_input("Submarca", ref["SUBMARCA"])
-        version = st.text_input("Versión", ref["VERSIÓN"])
-        anio = st.text_input("Año/Modelo", ref["AÑO/MODELO"])
-        serie = st.text_input("Número de serie", ref["NO. SERIE"])
+        version = st.text_input("Versión", ref["VERSION"])
+        anio = st.text_input("Año/Modelo", ref["MODELO"])
+        serie = st.text_input("Número de serie", ref["NO_SERIE"])
         motor = st.text_input("Motor", ref["MOTOR"])
         patente = st.text_input("Patente", ref["PATENTE"])
 
-    if st.button("💾 Guardar cambios"):
-        mask = df["# DE SINIESTRO"] == siniestro_id
-        if mask.any():
-            fecha_creacion = df.loc[mask, "FECHA CREACIÓN"].iloc[0]
+    if st.button("💾 Guardar cambios", use_container_width=True):
+        supabase.table("BitacoraOperaciones").update({
+            "NUM_SINIESTRO": num_siniestro,
+            "FECHA_CREACION": fecha_creacion,
+            "CORRELATIVO": correlativo,
+            "FECHA_SINIESTRO": fecha_siniestro.strftime("%Y-%m-%d"),
+            "LUGAR_SINIESTRO": lugar,
+            "MEDIO": medio,
+            "COBERTURA": Cobertura,
 
-        df.loc[mask, "# DE SINIESTRO"] = num_siniestro
-        df.loc[mask, "FECHA CREACIÓN"] = fecha_creacion
-        df.loc[mask, "CORRELATIVO"] = correlativo
-        df.loc[mask, "FECHA SINIESTRO"] = fecha_siniestro.strftime("%Y-%m-%d")
-        df.loc[mask, "LUGAR SINIESTRO"] = lugar
-        df.loc[mask, "MEDIO ASIGNACIÓN"] = medio
-        df.loc[mask, "COBERTURA"] = Cobertura
+            "NOMBRE_ASEGURADO":asegurado_nombre,
+            "RUT_ASEGURADO": asegurado_rut,
+            "TIPO_DE_PERSONA_ASEGURADO": asegurado_tipo,
+            "TEL_ASEGURADO": asegurado_tel,
+            "CORREO_ASEGURADO": asegurado_correo,
+            "DIRECCION_ASEGURADO": asegurado_dir,
 
-        df.loc[mask, "NOMBRE ASEGURADO"] = asegurado_nombre
-        df.loc[mask, "RUT ASEGURADO"] = asegurado_rut
-        df.loc[mask, "TIPO DE PERSONA ASEGURADO"] = asegurado_tipo
-        df.loc[mask, "TEL. ASEGURADO"] = asegurado_tel
-        df.loc[mask, "CORREO ASEGURADO"] = asegurado_correo
-        df.loc[mask, "DIRECCIÓN ASEGURADO"] = asegurado_dir
+            "NOMBRE_PROPIETARIO": propietario_nombre,
+            "RUT_PROPIETARIO": propietario_rut,
+            "TIPO_DE_PERSONA_PROPIETARIO": propietario_tipo,
+            "TEL_PROPIETARIO": propietario_tel,
+            "CORREO_PROPIETARIO": propietario_correo,
+            "DIRECCION_PROPIETARIO": propietario_dir,
 
-        df.loc[mask, "NOMBRE PROPIETARIO"] = propietario_nombre
-        df.loc[mask, "RUT PROPIETARIO"] = propietario_rut
-        df.loc[mask, "TIPO DE PERSONA PROPIETARIO"] = propietario_tipo
-        df.loc[mask, "TEL. PROPIETARIO"] = propietario_tel
-        df.loc[mask, "CORREO PROPIETARIO"] = propietario_correo
-        df.loc[mask, "DIRECCIÓN PROPIETARIO"] = propietario_dir
+            "MARCA": marca,
+            "SUBMARCA": submarca,
+            "VERSION": version,
+            "MODELO": anio,
+            "NO_SERIE": serie,
+            "MOTOR": motor,
+            "PATENTE": patente
+        }).eq("NUM_SINIESTRO", siniestro_id).execute()
 
-        df.loc[mask, "MARCA"] = marca
-        df.loc[mask, "SUBMARCA"] = submarca
-        df.loc[mask, "VERSIÓN"] = version
-        df.loc[mask, "AÑO/MODELO"] = anio
-        df.loc[mask, "NO. SERIE"] = serie
-        df.loc[mask, "MOTOR"] = motor
-        df.loc[mask, "PATENTE"] = patente
-
-        guardar_dataframe(sheet_form, df)
         st.session_state["last_load_time"] = 0
-        #st.success("Datos actualizados correctamente.")
-        st.toast("Guardando cambios...", icon="⏳",duration=5)
-        time.sleep(5)
-        st.toast("Datos actualizados correctamente", icon="✅")
+        st.toast("Guardando cambios...", icon="⏳",duration=1)
+        time.sleep(1)
+        st.toast("Datos actualizados correctamente", icon="✅",duration=1)
         st.success("Datos actualizados correctamente", icon="✅")
+        time.sleep(1)
         st.rerun()
+
 def vista_modificar_siniestro():
 
     st.subheader("🔍 Buscar siniestro para actualizar")
 
-    # ============================
-    #  1. Recargar DF 
-    # ============================
-    #df = obtener_dataframe(sheet_form)
-    #df = cargar_dataframe_rate_limit(sheet_form, cooldown=15)
-    try:
-        df = cargar_dataframe_rate_limit(sheet_form, cooldown=15)
-    except APIError:
-        st.warning("La API de Google Sheets está saturada. Intenta de nuevo en unos minutos.")
-        time.sleep(5)
-        st.stop()
-    # ============================
-    #  2. Buscar siniestro
-    # ============================
     busqueda = st.text_input("ESCRIBE NÚMERO DE SINIESTRO")
 
     if not busqueda:
         st.info("Ingresa un número para buscar un siniestro.")
         return
+    try:
+        response = (
+            supabase
+            .table("BitacoraOperaciones")
+            .select("*")
+            .eq("NUM_SINIESTRO", busqueda)
+            .execute()
+        )
+    except Exception as e:
+        st.error("Error al consultar el siniestro.")
+        st.write(e)
+        st.stop()
 
-    # Coincidencias en cualquier columna
-    mask = df.apply(lambda r: r.astype(str).str.contains(busqueda, case=False, na=False).any(), axis=1)
-    resultados = df[mask]
-
-    if resultados.empty:
-        st.warning("❌ No se encontraron coincidencias.")
+    if not response.data:
+        st.error("Siniestro no encontrado.",icon="❌")
         return
-
-    siniestros_unicos = resultados["# DE SINIESTRO"].unique()
-
-    # ============================
-    #  3. Selección del siniestro
-    # ============================
-    seleccionado = st.selectbox(
-        "Selecciona un siniestro:",
-        siniestros_unicos,
-        key="sel_siniestro"
-    )
+    
+    seleccionado = response.data[0].get("NUM_SINIESTRO")
 
     if not seleccionado:
         return
 
     st.session_state["siniestro_actual"] = seleccionado
 
-    # Crear df_sel siempre actualizado
-    df_sel = df[df["# DE SINIESTRO"] == seleccionado]
+    st.success(f"Siniestro encontrado", icon="✅")
 
-    st.success(f"Siniestro seleccionado: {seleccionado}")
-
-    # ============================
-    #  4. Tabs
-    # ============================
-    tab1, tab2 = st.tabs(["✏️ Modificar Datos del Siniestro", "📌 Agregar Estatus (Seguimiento)"])
+    tab1, tab2 = st.tabs(["✏️ MODIFICAR DATOS", "📌 SEGUIMIENTO"])
 
     with tab1:
-        panel_modificar_datos(df_sel, df, seleccionado)
+        panel_modificar_datos(seleccionado)
 
     with tab2:
-        panel_seguimiento(df_sel, df, seleccionado)
+        panel_seguimiento(seleccionado)
 
-    # ============================
-    #  5. Regresar a inicio
-    # ============================
     if st.button("Volver al inicio", icon="⬅️", use_container_width=True):
         st.session_state.vista = None
         st.rerun()
@@ -662,11 +559,10 @@ def registro_siniestro():
                 key="veh_archivos"
             )
 
-        # >>>>>>>> AQUÍ VA EL SUBMIT BUTTON <<<<<<<<
             enviado = st.form_submit_button("Guardar",use_container_width=True,width=150,icon="💾")
 
     col1, col2, col3 = st.columns(3)
-    with col2: # Puedes usar esta columna para alineación si lo deseas
+    with col2:
         limpiar = st.button("Limpiar Registro", on_click=limpiar_y_recargar,use_container_width=True,width=100,icon="🗑️")
     with col3:
         if st.button("Volver al inicio",icon="⬅️",use_container_width=True,width=100):
@@ -674,6 +570,19 @@ def registro_siniestro():
             st.rerun()
     # ======================= VALIDACIONES =============================
         if enviado:
+            response = (
+                supabase
+                .table("BitacoraOperaciones")
+                .select("*")
+                .eq("NUM_SINIESTRO",Siniestro)
+                .limit(1)
+                .execute()
+            )
+
+            if response.data:
+                st.toast("El número de expediente ya se encuentra registrado. Use un ID diferente o revise la pestaña “Modificar datos”.", icon="🚨",duration=3)
+                return
+
             errores = []
 
             if not Siniestro:
@@ -686,11 +595,10 @@ def registro_siniestro():
             if errores:
                 st.error("Revisa lo siguiente:\n- " + "\n- ".join(errores))
                 return
-
+            
             # Usuario login desde session_state
             Usuario_Login = st.session_state["USUARIO"]
             Liquidador_Nombre = st.session_state["LIQUIDADOR"]
-            FechaMovimiento = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
             # Crear carpeta en drive
             carpeta_id = obtener_o_crear_carpeta(f"SINIESTRO_{Siniestro}", drive_service)
@@ -709,47 +617,44 @@ def registro_siniestro():
                     )
                     links_archivos.append(f"https://drive.google.com/file/d/{archivo_id}/view")
 
-            # Guardar en Sheets
-            sheet_form.append_row([
-                Siniestro,
-                Correlativo,
-                FechaSiniestro.strftime("%Y-%m-%d"),
-                Lugar,
-                Medio,
-                Cobertura,
-                Marca,
-                Submarca,
-                Version,
-                AñoModelo,
-                Serie,
-                Motor,
-                Patente,
-                datetime.now(ZoneInfo("America/Mexico_City")).strftime("%Y-%m-%d"),
-                datetime.now(ZoneInfo("America/Mexico_City")).strftime("%Y-%m-%d %H:%M:%S"),
-                "ALTA SINIESTRO",
-                Asegurado_Nombre,
-                Asegurado_Rut,
-                Asegurado_Tipo,
-                Asegurado_Telefono,
-                Asegurado_Correo,
-                Asegurado_Direccion,
-                Propietario_Nombre,
-                Propietario_Rut,
-                Propietario_Tipo,
-                Propietario_Telefono,
-                Propietario_Correo,
-                Propietario_Direccion,
-                Liquidador_Nombre,
-                Usuario_Login,
-                carpeta_link
-            ])
-            #st.success("✔ Siniestro registrado correctamente.")
-            st.toast("Guardando cambios...", icon="⏳",duration=5)
-            time.sleep(5)
+            supabase.table("BitacoraOperaciones").insert({
+                "NUM_SINIESTRO": Siniestro,
+                "CORRELATIVO": Correlativo,
+                "FECHA_SINIESTRO": FechaSiniestro.strftime("%Y-%m-%d"),
+                "LUGAR_SINIESTRO": Lugar,
+                "MEDIO": Medio,
+                "COBERTURA": Cobertura,
+                "MARCA": Marca,
+                "SUBMARCA": Submarca,
+                "VERSION": Version,
+                "MODELO": AñoModelo,
+                "NO_SERIE": Serie,
+                "MOTOR": Motor,
+                "PATENTE": Patente,
+                "FECHA_CREACION": datetime.now(ZoneInfo("America/Mexico_City")).strftime("%Y-%m-%d"),
+                "FECHA_ESTATUS_BITACORA": datetime.now(ZoneInfo("America/Mexico_City")).strftime("%Y-%m-%d %H:%M:%S"),
+                "ESTATUS": "ALTA SINIESTRO",
+                "NOMBRE_ASEGURADO": Asegurado_Nombre,
+                "RUT_ASEGURADO": Asegurado_Rut,
+                "TIPO_DE_PERSONA_ASEGURADO": Asegurado_Tipo,
+                "TEL_ASEGURADO": Asegurado_Telefono,
+                "CORREO_ASEGURADO": Asegurado_Correo,
+                "DIRECCION_ASEGURADO": Asegurado_Direccion,
+                "NOMBRE_PROPIETARIO": Propietario_Nombre,
+                "RUT_PROPIETARIO": Propietario_Rut,
+                "TIPO_DE_PERSONA_PROPIETARIO": Propietario_Tipo,
+                "TEL_PROPIETARIO": Propietario_Telefono,
+                "CORREO_PROPIETARIO": Propietario_Correo,
+                "DIRECCION_PROPIETARIO": Propietario_Direccion,
+                "LIQUIDADOR": Liquidador_Nombre,
+                "CORREO_LIQUIDADOR": Usuario_Login,
+                "DRIVE": carpeta_link
+            }).execute()
+
+            st.toast("Guardando cambios...", icon="⏳",duration=1)
+            time.sleep(1)
             st.toast("Siniestro registrado correctamente", icon="✅")
-            st.success("Siniestro registrado correctamente", icon="✅")
-            #reset_form_registro()
-            #st.rerun()
+           #st.success("Siniestro registrado correctamente", icon="✅",width=30)
 
 def vista_buscar_siniestro():
 
@@ -762,22 +667,69 @@ def vista_buscar_siniestro():
         if not siniestro:
             st.warning("Ingresa un número de siniestro.")
             return
-
-        #df = obtener_dataframe(sheet_form)
-        #df = cargar_dataframe_rate_limit(sheet_form, cooldown=15)
         try:
-            df = cargar_dataframe_rate_limit(sheet_form, cooldown=15)
-        except APIError:
-            st.warning("La API de Google Sheets está saturada. Intenta de nuevo en unos minutos.")
-            time.sleep(5)
+            response = (
+                supabase
+                .table("BitacoraOperaciones")
+                .select("*")
+                .eq("NUM_SINIESTRO", siniestro)
+                .execute()
+            )
+        except Exception as e:
+            st.error("Error al consultar el siniestro.")
+            st.write(e)
             st.stop()
-        resultado = df[df["# DE SINIESTRO"].astype(str) == str(siniestro)]
+
+        if not response.data:
+            st.error("Siniestro no encontrado.",icon="❌")
+            return
+
+        resultado = pd.DataFrame(response.data)
 
         if resultado.empty:
             st.error("❌ Siniestro no encontrado.")
             return
+        resultado.rename(columns={
+            "NUM_SINIESTRO":"# DE SINIESTRO",
+            "CORRELATIVO":"CORRELATIVO",
+            "FECHA_SINIESTRO":"FECHA SINIESTRO",
+            "LUGAR_SINIESTRO":"LUGAR SINIESTRO",
+            "MEDIO":"MEDIO ASIGNACIÓN",
+            "COBERTURA":"COBERTURA",
+            "MARCA":"MARCA",
+            "SUBMARCA":"SUBMARCA",
+            "VERSION":"VERSIÓN",
+            "MODELO":"AÑO/MODELO",
+            "NO_SERIE":"NO. SERIE",
+            "MOTOR":"MOTOR",
+            "PATENTE":"PATENTE",
+            "FECHA_CREACION":"FECHA CREACIÓN",
+            "FECHA_ESTATUS_BITACORA":"FECHA ESTATUS BITÁCORA",
+            "ESTATUS":"ESTATUS",
+            "NOMBRE_ASEGURADO":"NOMBRE ASEGURADO",
+            "RUT_ASEGURADO":"RUT ASEGURADO",
+            "TIPO_DE_PERSONA_ASEGURADO":"TIPO DE PERSONA ASEGURADO",
+            "TEL_ASEGURADO":"TEL. ASEGURADO",
+            "CORREO_ASEGURADO":"CORREO ASEGURADO",
+            "DIRECCION_ASEGURADO":"DIRECCIÓN ASEGURADO",
+            "NOMBRE_PROPIETARIO":"NOMBRE PROPIETARIO",
+            "RUT_PROPIETARIO":"RUT PROPIETARIO",
+            "TIPO_DE_PERSONA_PROPIETARIO":"TIPO DE PERSONA PROPIETARIO",
+            "TEL_PROPIETARIO":"TEL. PROPIETARIO",
+            "CORREO_PROPIETARIO":"CORREO PROPIETARIO",
+            "DIRECCION_PROPIETARIO":"DIRECCIÓN PROPIETARIO",
+            "LIQUIDADOR":"LIQUIDADOR",
+            "CORREO_LIQUIDADOR":"CORREO LIQUIDADOR",
+            "DRIVE":"DRIVE",
+            "COMENTARIO":"COMENTARIO"
+        },inplace=True)
 
-        st.success("Resultado encontrado:")
+        
+        resultado["FECHA ESTATUS BITÁCORA"] = pd.to_datetime(resultado["FECHA ESTATUS BITÁCORA"], errors="coerce")
+        resultado = resultado.sort_values(by=["FECHA ESTATUS BITÁCORA"],ascending=[True])
+        Ultimo_estatus = resultado.iloc[-1]["ESTATUS"]
+        st.success(f"Último estatus registrado: {Ultimo_estatus}")
+        st.info("Registro de operaciones completo:")
         st.dataframe(resultado, use_container_width=True, hide_index=True)
 
         # ============================
@@ -797,43 +749,96 @@ def vista_buscar_siniestro():
         else:
             st.info("La columna 'DRIVE' no existe en el registro.")
 
-    if st.button("Volver al inicio", icon="⬅️"):
+    if st.button("Volver al inicio", icon="⬅️",use_container_width=True):
         st.session_state.vista = None
         st.rerun()
 
 def vista_descargas():
     st.subheader("📥 Descargas")
-
-    # --- Cargar datos del sheet ---
-    #df = pd.DataFrame(sheet_form.get_all_records())
-    try:
-        df = pd.DataFrame(sheet_form.get_all_records())
-    except APIError:
-        st.warning("La API de Google Sheets está saturada. Intenta de nuevo en unos minutos.")
-        time.sleep(5)
-        st.stop()
+    response = (
+        supabase
+        .table("BitacoraOperaciones")
+        .select("*")
+        .execute()
+    )
+    resultado = pd.DataFrame(response.data)
+    resultado.rename(columns={
+        "NUM_SINIESTRO":"# DE SINIESTRO",
+        "CORRELATIVO":"CORRELATIVO",
+        "FECHA_SINIESTRO":"FECHA SINIESTRO",
+        "LUGAR_SINIESTRO":"LUGAR SINIESTRO",
+        "MEDIO":"MEDIO ASIGNACIÓN",
+        "COBERTURA":"COBERTURA",
+        "MARCA":"MARCA",
+        "SUBMARCA":"SUBMARCA",
+        "VERSION":"VERSIÓN",
+        "MODELO":"AÑO/MODELO",
+        "NO_SERIE":"NO. SERIE",
+        "MOTOR":"MOTOR",
+        "PATENTE":"PATENTE",
+        "FECHA_CREACION":"FECHA CREACIÓN",
+        "FECHA_ESTATUS_BITACORA":"FECHA ESTATUS BITÁCORA",
+        "ESTATUS":"ESTATUS",
+        "NOMBRE_ASEGURADO":"NOMBRE ASEGURADO",
+        "RUT_ASEGURADO":"RUT ASEGURADO",
+        "TIPO_DE_PERSONA_ASEGURADO":"TIPO DE PERSONA ASEGURADO",
+        "TEL_ASEGURADO":"TEL. ASEGURADO",
+        "CORREO_ASEGURADO":"CORREO ASEGURADO",
+        "DIRECCION_ASEGURADO":"DIRECCIÓN ASEGURADO",
+        "NOMBRE_PROPIETARIO":"NOMBRE PROPIETARIO",
+        "RUT_PROPIETARIO":"RUT PROPIETARIO",
+        "TIPO_DE_PERSONA_PROPIETARIO":"TIPO DE PERSONA PROPIETARIO",
+        "TEL_PROPIETARIO":"TEL. PROPIETARIO",
+        "CORREO_PROPIETARIO":"CORREO PROPIETARIO",
+        "DIRECCION_PROPIETARIO":"DIRECCIÓN PROPIETARIO",
+        "LIQUIDADOR":"LIQUIDADOR",
+        "CORREO_LIQUIDADOR":"CORREO LIQUIDADOR",
+        "DRIVE":"DRIVE",
+        "COMENTARIO":"COMENTARIO"
+    },inplace=True)
 
     st.write("Selecciona el tipo de bitácora a descargar.")
 
     opcion = st.selectbox(
         "Tipo de descarga",
-        ["Selecciona una opción",
-         "Bitácora de operación", 
-         "Bitácora de último estatus"]
+        [
+            "Selecciona una opción",
+            "Bitácora de operación",
+            "Bitácora de último estatus"
+        ],
+        key="tipo_descarga"
     )
-
     # --- BITÁCORA DE OPERACIÓN ---
     if opcion == "Bitácora de operación":
-        #st.write("Descargar todos los registros de la hoja (bitácora completa).")
 
+        resultado["FECHA ESTATUS BITÁCORA"] = pd.to_datetime(resultado["FECHA ESTATUS BITÁCORA"],errors="coerce")
+        resultado["FECHA SINIESTRO"] = pd.to_datetime(resultado["FECHA SINIESTRO"], errors="coerce")
+        resultado["FECHA CREACIÓN"] = pd.to_datetime(resultado["FECHA CREACIÓN"], errors = "coerce")
+        
         buffer = io.BytesIO()
         with pd.ExcelWriter(buffer, engine="openpyxl") as writer:
-            df.to_excel(writer, index=False, sheet_name="LOG")
+            resultado.to_excel(writer, index=False, sheet_name="LOG")
+            ws = writer.book["LOG"]
+            header_fill = PatternFill("solid", fgColor="1F4E78")  # azul
+            header_font = Font(bold=True, color="FFFFFF")
+            header_align = Alignment(
+                horizontal="center",
+                vertical="center",
+                wrap_text=True
+            )
+
+            for col_idx, cell in enumerate(ws[1], start=1):
+                cell.fill = header_fill
+                cell.font = header_font
+                cell.alignment = header_align
+                ws.column_dimensions[get_column_letter(col_idx)].width = 22
+            ws.row_dimensions[1].height = 35
 
         st.download_button(
-            label="Descargar bitácora",
+            label="Descargar bitácora de operación",
             icon="⬇️",
             use_container_width=True,
+            disabled=False,
             data=buffer.getvalue(),
             file_name="Bitacora_Operación_SURA.xlsx",
             mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
@@ -841,35 +846,46 @@ def vista_descargas():
 
     # --- BITÁCORA DE ÚLTIMO ESTATUS ---
     elif opcion == "Bitácora de último estatus":
-        #st.write("Descargar solo el registro más reciente de cada siniestro.")
+        resultado["FECHA ESTATUS BITÁCORA"] = pd.to_datetime(resultado["FECHA ESTATUS BITÁCORA"],errors="coerce")
+        resultado["FECHA SINIESTRO"] = pd.to_datetime(resultado["FECHA SINIESTRO"], errors="coerce")
+        resultado["FECHA CREACIÓN"] = pd.to_datetime(resultado["FECHA CREACIÓN"], errors = "coerce")
 
-        # Convertir fecha si existe
-        df["FECHA ESTATUS BITÁCORA"] = pd.to_datetime(
-            df["FECHA ESTATUS BITÁCORA"], 
-            errors="coerce"
-        )
-
-        # Ordenar para luego obtener el último registro por siniestro
-        df_sorted = df.sort_values(
+        df_sorted = resultado.sort_values(
             by=["# DE SINIESTRO", "FECHA ESTATUS BITÁCORA"],
             ascending=[True, True]
         )
 
-        # Obtener el último registro por siniestro
         df_ultimos = df_sorted.groupby("# DE SINIESTRO").tail(1)
 
         buffer = io.BytesIO()
         with pd.ExcelWriter(buffer, engine="openpyxl") as writer:
             df_ultimos.to_excel(writer, index=False, sheet_name="LOG")
+            ws = writer.book["LOG"]
+            header_fill = PatternFill("solid", fgColor="1F4E78")  # azul
+            header_font = Font(bold=True, color="FFFFFF")
+            header_align = Alignment(
+                horizontal="center",
+                vertical="center",
+                wrap_text=True
+            )
+
+            for col_idx, cell in enumerate(ws[1], start=1):
+                cell.fill = header_fill
+                cell.font = header_font
+                cell.alignment = header_align
+                ws.column_dimensions[get_column_letter(col_idx)].width = 22
+            ws.row_dimensions[1].height = 35
 
         st.download_button(
-            label="Descargar bitácora",
+            label="Descargar bitácora de último estatus",
             icon="⬇️",
             use_container_width=True,
+            disabled=False,
             data=buffer.getvalue(),
             file_name="Bitacora_UltimoEstatus_SURA.xlsx",
             mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
         )
+
     if st.button("Volver al inicio",icon="⬅️",use_container_width=True,width=100):
         st.session_state.vista = None
         st.rerun()
@@ -904,12 +920,27 @@ def vista_registro_usuario():
             if errores:
                 st.error("Revisa lo siguiente:\n- " + "\n- ".join(errores))
                 return
-            sheet_users.append_row([
-                correo,
-                password,
-                rol,
-                usuario
-            ])
+            
+            response = (
+                supabase
+                .table("Login")
+                .select("USUARIO","PASSWORD","ROL","LIQUIDADOR")
+                .eq("USUARIO",correo)
+                .limit(1)
+                .execute()
+            )
+
+            if response.data:
+                st.error("La dirección de correo ingresada ya se encuentra asociada a un perfil de liquidador. Intenta nuevamente con una cuenta distinta.", icon="🚨")
+                return
+
+            supabase.table("Login").insert({
+                "USUARIO": correo,
+                "PASSWORD": bcrypt.hashpw(str(password).encode("utf-8"),bcrypt.gensalt()).decode("utf-8"),
+                "ROL": rol,
+                "LIQUIDADOR": usuario.upper()
+            }).execute()
+
             st.success("Usuario registrado correctamente")
             CLAVE_APP = 'ckkazcijqkwikscd' #Contraseña de aplicación, utilizada para acceder al correo
             REMITENTE = 'jbarron@cibergestion.com' 
@@ -940,8 +971,205 @@ def vista_registro_usuario():
         st.session_state.vista = None
         st.rerun()
 # =======================================================
+#               DASHBOARD GENERAL Y PARTICULAR
+# =======================================================
+def kpi_card_2(titulo, valor, color_bg, color_font):
+    st.markdown(
+        f"""
+        <div style="
+            background-color:{color_bg};
+            padding:16px;
+            border-radius:12px;
+            text-align:center;
+            color:{color_font};
+            height:140px;
+            display:flex;
+            flex-direction:column;
+            justify-content:left;
+        ">
+            <span style="font-size:20px; font-weight:500; color:{color_font};"><strong>{titulo}</strong></span>
+            <h2 style="margin:0;">{valor}</h2>
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
+
+def kpi_card(backcolor, border, text1, text2, valor):
+    st.markdown(
+        f"""
+        <div style="
+            background-color:{backcolor};
+            padding:5px;
+            border-left:7px solid {border};
+            border-radius:6px;
+            font-size:20px;
+            text-align:center;
+            color:"black";
+        ">
+            <p style="font-size: 20px;"><strong>{text1}</strong></p>
+            <p style="font-size: 25px; color: rgb(172, 0, 0);"<strong><font color="red">{valor}</strong></font></p>
+            <p style="font-size: 20px;"><strong>{text2}</strong></p>
+        </div>
+        """,
+        unsafe_allow_html=True
+        )
+
+def dash_general():
+    Liquidador_Nombre = st.session_state["LIQUIDADOR"]
+    st.header(f"¡HOLA, {Liquidador_Nombre}!")
+
+    response = (
+    supabase
+    .table("BitacoraOperaciones")
+    .select("*")
+    .execute()
+    )
+    df_dash = pd.DataFrame(response.data)
+    df_dash["FECHA_ESTATUS_BITACORA"] = pd.to_datetime(df_dash["FECHA_ESTATUS_BITACORA"],errors="coerce")
+    df_dash["FECHA_CREACION"] = pd.to_datetime(df_dash["FECHA_CREACION"], errors="coerce")
+    df_dash = (df_dash.sort_values(by=["NUM_SINIESTRO", "FECHA_ESTATUS_BITACORA"],ascending=[True, True]).groupby("NUM_SINIESTRO").tail(1))
+
+    estatus_cierre = [
+    "PAGO LIBERADO",
+    "CIERRE POR DESISTIMIENTO",
+    "CIERRE POR RECHAZO",
+    "SOLICITUD DE PAGO GENERADA"
+    ]
+
+    df_cerrados = df_dash[df_dash["ESTATUS"].isin(estatus_cierre)]
+    df_cerrados["DIAS_HABILES"] = np.busday_count(df_cerrados["FECHA_CREACION"].values.astype("datetime64[D]"), 
+                                                  df_cerrados["FECHA_ESTATUS_BITACORA"].values.astype("datetime64[D]"))
+
+    #df_cerrados = df_dash[(df_dash["ESTATUS"] == "PAGO LIBERADO") | (df_dash["ESTATUS"] == "SOLICITUD DE PAGO GENERADA")]
+    
+    total_siniestros = df_dash.shape[0]
+    total_cerrados = df_cerrados.shape[0]
+    Per_cerrados = str(int((total_cerrados/total_siniestros)*100)) + " %"
+    promedio_dias_cierre = round(df_cerrados["DIAS_HABILES"].mean(), 1)
+
+
+    st.subheader("MÉTRICAS GENERALES",divider="blue")
+    col1, col2, col3, col4 = st.columns(4)
+
+    with col1:
+        #kpi_card("SINIESTROS RECIBIDOS",total_siniestros,"#FFF4EA","#FBA21B")
+        kpi_card("#FFF4EA","#FBA21B","SINIESTROS","RECIBIDOS",total_siniestros)
+    with col2:
+        #kpi_card("SINIESTROS CERRADOS",total_cerrados,"#F0FFEA","#047A1B")
+        kpi_card("#F0FFEA","#047A1B","SINIESTROS","CERRADOS",total_cerrados)
+    with col3:
+        #kpi_card("% CERRADOS", Per_cerrados, "#E6F1FD","#6DA1AF")
+        kpi_card("#E6F1FD","#6DA1AF","%","CERRADOS",Per_cerrados)
+    with col4:
+        #kpi_card("DÍAS PROMEDIO CIERRE", promedio_dias_cierre, "#E6F1FD","#6DA1AF")
+        kpi_card("#FFF5F7","#A82A50","DÍAS PROMEDIO","CIERRE",promedio_dias_cierre)
+
+    #Agregamos gráficas generales
+    st.divider()
+    col1, col2 = st.columns(2)
+
+    count_estatus = df_dash.groupby("ESTATUS").size().reset_index(name="TOTAL")
+    count_liquidador = df_dash.groupby("LIQUIDADOR").size().reset_index(name="TOTAL")
+
+    with col1:
+        st.markdown("### TOTAL DE SINIESTROS POR ESTATUS")
+
+        chart_estatus = alt.Chart(count_estatus).mark_bar().encode(
+            x=alt.X("TOTAL:Q", title="TOTAL"),
+            y=alt.Y("ESTATUS:N", sort="-x", title=""),
+            color=alt.value("#0fb3ff86"),
+            tooltip=["ESTATUS", "TOTAL"]
+        ).properties(height=400)
+
+        st.altair_chart(chart_estatus, use_container_width=True)
+    with col2:
+        st.markdown("### TOTAL DE SINIESTROS POR LIQUIDADOR")
+
+        chart_liquidador = alt.Chart(count_liquidador).mark_bar().encode(
+            x=alt.X("TOTAL:Q", title="TOTAL"),
+            y=alt.Y("LIQUIDADOR:N", sort="-x", title=""),
+            color=alt.value("#992cff86"),
+            tooltip=["LIQUIDADOR", "TOTAL"]
+        ).properties(height=400)
+
+        st.altair_chart(chart_liquidador, use_container_width=True)
+    
+def dash_liquidador():
+    st.divider()
+    Liquidador = st.session_state["LIQUIDADOR"]
+    response = (
+    supabase
+    .table("BitacoraOperaciones")
+    .select("*")
+    .eq("LIQUIDADOR", Liquidador)
+    .execute()
+    )
+    
+    df_dash = pd.DataFrame(response.data)
+    df_dash["FECHA_ESTATUS_BITACORA"] = pd.to_datetime(df_dash["FECHA_ESTATUS_BITACORA"],errors="coerce")
+    df_dash = (df_dash.sort_values(by=["NUM_SINIESTRO", "FECHA_ESTATUS_BITACORA"],ascending=[True, True]).groupby("NUM_SINIESTRO").tail(1))
+    df_dash.rename(columns={
+            "NUM_SINIESTRO":"# DE SINIESTRO",
+            "CORRELATIVO":"CORRELATIVO",
+            "FECHA_SINIESTRO":"FECHA SINIESTRO",
+            "LUGAR_SINIESTRO":"LUGAR SINIESTRO",
+            "MEDIO":"MEDIO ASIGNACIÓN",
+            "COBERTURA":"COBERTURA",
+            "MARCA":"MARCA",
+            "SUBMARCA":"SUBMARCA",
+            "VERSION":"VERSIÓN",
+            "MODELO":"AÑO/MODELO",
+            "NO_SERIE":"NO. SERIE",
+            "MOTOR":"MOTOR",
+            "PATENTE":"PATENTE",
+            "FECHA_CREACION":"FECHA CREACIÓN",
+            "FECHA_ESTATUS_BITACORA":"FECHA ESTATUS BITÁCORA",
+            "ESTATUS":"ESTATUS",
+            "NOMBRE_ASEGURADO":"NOMBRE ASEGURADO",
+            "RUT_ASEGURADO":"RUT ASEGURADO",
+            "TIPO_DE_PERSONA_ASEGURADO":"TIPO DE PERSONA ASEGURADO",
+            "TEL_ASEGURADO":"TEL. ASEGURADO",
+            "CORREO_ASEGURADO":"CORREO ASEGURADO",
+            "DIRECCION_ASEGURADO":"DIRECCIÓN ASEGURADO",
+            "NOMBRE_PROPIETARIO":"NOMBRE PROPIETARIO",
+            "RUT_PROPIETARIO":"RUT PROPIETARIO",
+            "TIPO_DE_PERSONA_PROPIETARIO":"TIPO DE PERSONA PROPIETARIO",
+            "TEL_PROPIETARIO":"TEL. PROPIETARIO",
+            "CORREO_PROPIETARIO":"CORREO PROPIETARIO",
+            "DIRECCION_PROPIETARIO":"DIRECCIÓN PROPIETARIO",
+            "LIQUIDADOR":"LIQUIDADOR",
+            "CORREO_LIQUIDADOR":"CORREO LIQUIDADOR",
+            "DRIVE":"DRIVE",
+            "COMENTARIO":"COMENTARIO"
+        },inplace=True)
+
+    st.subheader("MÉTRICAS PARTICULARES",divider="blue")
+
+    st.markdown(
+    """
+    <div style="
+        background-color:#f3f4f6;
+        padding:12px;
+        border-left:5px solid #3b82f6;
+        border-radius:6px;
+        font-size:14px;
+    ">
+        📄 <strong>Último estatus de tus siniestros asignados.</strong><br>
+        Puedes descargar la tabla haciendo clic en el ícono de descarga en la esquina superior derecha.
+    </div>
+    """,
+    unsafe_allow_html=True
+    )
+    
+    st.divider()
+    st.dataframe(data=df_dash,hide_index=True,)
+
+
+
+# =======================================================
 #               VISTA LIQUIDADOR
 # =======================================================
+
 def vista_liquidador():
 
     Liquidador_Nombre = st.session_state["LIQUIDADOR"]
@@ -950,7 +1178,6 @@ def vista_liquidador():
     # Inicializar la variable si no existe
     if "vista" not in st.session_state:
         st.session_state.vista = None
-
     # ----------------------------------------------------
     #  MENÚ LATERAL
     # ----------------------------------------------------
@@ -966,7 +1193,7 @@ def vista_liquidador():
     with st.sidebar:
         if st.button("BUSCAR / CONSULTAR", use_container_width=True, icon="🔎"):
             st.session_state.vista = "BUSCAR"
-        #st.markdown("<div style='height:20vh'></div>", unsafe_allow_html=True)
+
         if st.button("Cerrar sesión", use_container_width=True,icon="❌"):
             st.session_state.clear()
             st.rerun()
@@ -985,17 +1212,23 @@ def vista_liquidador():
     elif st.session_state.vista == "BUSCAR":
         vista_buscar_siniestro()
 
+    elif st.session_state.vista == None:
+        dash_general()
+        dash_liquidador()
+    
+
 # =======================================================
 #                VISTA ADMINISTRADOR
 # =======================================================
 def vista_admin():
     Liquidador_Nombre = st.session_state["LIQUIDADOR"]
-    st.title(f"¡HOLA, {Liquidador_Nombre}!")
+    #st.title(f"¡HOLA, {Liquidador_Nombre}!")
+    image_url = "https://www.segurossura.com.co/boletincovid191/Recomendaciones_COVID-19/images/logo_sura.png"
+    st.logo(image=image_url,size="large")
 
     # Inicializar la variable si no existe
     if "vista" not in st.session_state:
         st.session_state.vista = None
-
     # ----------------------------------------------------
     #  MENÚ LATERAL
     # ----------------------------------------------------
@@ -1028,11 +1261,13 @@ def vista_admin():
     # =====================================================================================
     if st.session_state.vista == "REGISTRAR":
         registro_siniestro()
-
     elif st.session_state.vista == "ACTUALIZAR":
         vista_modificar_siniestro()
     elif st.session_state.vista == "CARGA":
         panel_subir_documentos()
+    elif st.session_state.vista == None:
+        dash_general()
+        dash_liquidador()
 
     # =====================================================================================
     #                                BUSCAR / ACTUALIZAR
@@ -1044,14 +1279,6 @@ def vista_admin():
         vista_descargas()
     elif st.session_state.vista == "USUARIOS":
         vista_registro_usuario()
-        
-    #datos = sheet_form.get_all_records()
-    #df = pd.DataFrame(datos)
-
-    #st.dataframe(df)
-    #st.write("Total de registros:", len(df))
-
-
 
 # =======================================================
 #                 CONTROL DE SESIÓN
@@ -1060,18 +1287,12 @@ if "auth" not in st.session_state:
     st.session_state["auth"] = False
 
 if not st.session_state["auth"]:
-    login(df_usuarios)
+    login()
     st.stop()
 
 # =======================================================
 #                 INTERFAZ PRINCIPAL
 # =======================================================
-#st.sidebar.write(f"USUARIO: **{st.session_state['USUARIO']}**")
-#st.sidebar.write(f"ROL: **{st.session_state['ROL']}**")
-
-#if st.sidebar.button("Cerrar sesión",icon="❌",use_container_width=True):
-#    st.session_state.clear()
-#    st.rerun()
 
 with st.sidebar:
     st.markdown("""
