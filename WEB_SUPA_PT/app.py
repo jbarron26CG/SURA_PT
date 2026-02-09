@@ -755,6 +755,7 @@ def vista_buscar_siniestro():
 
 def vista_descargas():
     st.subheader("📥 Descargas")
+    #Intentando que se descarguen todos los registros
     response = (
         supabase
         .table("BitacoraOperaciones")
