@@ -800,6 +800,8 @@ def vista_descargas():
     },inplace=True)
 
     st.write("Selecciona el tipo de bitácora a descargar.")
+    st.write("Filas recibidas:", len(response.data))
+
 
     opcion = st.selectbox(
         "Tipo de descarga",
