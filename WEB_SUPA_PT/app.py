@@ -752,6 +752,29 @@ def vista_buscar_siniestro():
     if st.button("Volver al inicio", icon="⬅️",use_container_width=True):
         st.session_state.vista = None
         st.rerun()
+def fetch_all_bitacora():
+    all_rows = []
+    start = 0
+    step = 1000
+
+    while True:
+        response = (
+            supabase
+            .table("BitacoraOperaciones")
+            .select("*")
+            .range(start, start + step - 1)
+            .execute()
+        )
+
+        data = response.data
+        if not data:
+            break
+
+        all_rows.extend(data)
+        start += step
+
+    return all_rows
+
 
 def vista_descargas():
     st.subheader("📥 Descargas")
@@ -763,7 +786,9 @@ def vista_descargas():
         .range(0,10000)
         .execute()
     )
-    resultado = pd.DataFrame(response.data)
+    rows = fetch_all_bitacora()
+    resultado = pd.DataFrame(rows)
+    #resultado = pd.DataFrame(response.data)
     resultado.rename(columns={
         "NUM_SINIESTRO":"# DE SINIESTRO",
         "CORRELATIVO":"CORRELATIVO",
