@@ -779,13 +779,13 @@ def fetch_all_bitacora():
 def vista_descargas():
     st.subheader("📥 Descargas")
     #Intentando que se descarguen todos los registros
-    response = (
-        supabase
-        .table("BitacoraOperaciones")
-        .select("*")
-        .range(0,10000)
-        .execute()
-    )
+    #response = (
+    #    supabase
+    #    .table("BitacoraOperaciones")
+    #    .select("*")
+    #    .range(0,10000)
+    #    .execute()
+    #)
     rows = fetch_all_bitacora()
     resultado = pd.DataFrame(rows)
     #resultado = pd.DataFrame(response.data)
@@ -825,8 +825,6 @@ def vista_descargas():
     },inplace=True)
 
     st.write("Selecciona el tipo de bitácora a descargar.")
-    st.write("Filas recibidas:", len(response.data))
-
 
     opcion = st.selectbox(
         "Tipo de descarga",
@@ -1047,14 +1045,16 @@ def dash_general():
     Liquidador_Nombre = st.session_state["LIQUIDADOR"]
     st.header(f"¡HOLA, {Liquidador_Nombre}!")
 
-    response = (
-    supabase
-    .table("BitacoraOperaciones")
-    .select("*")
-    .range(0,10000)
-    .execute()
-    )
-    df_dash = pd.DataFrame(response.data)
+   # response = (
+   # supabase
+   # .table("BitacoraOperaciones")
+   # .select("*")
+   # .range(0,10000)
+   # .execute()
+   # )
+    rows = fetch_all_bitacora()
+    df_dash = pd.DataFrame(rows)
+    #df_dash = pd.DataFrame(response.data)
     df_dash["FECHA_ESTATUS_BITACORA"] = pd.to_datetime(df_dash["FECHA_ESTATUS_BITACORA"],errors="coerce")
     df_dash["FECHA_CREACION"] = pd.to_datetime(df_dash["FECHA_CREACION"], errors="coerce")
     df_dash = (df_dash.sort_values(by=["NUM_SINIESTRO", "FECHA_ESTATUS_BITACORA"],ascending=[True, True]).groupby("NUM_SINIESTRO").tail(1))
