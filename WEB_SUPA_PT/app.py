@@ -1063,7 +1063,7 @@ def dash_general():
     "PAGO LIBERADO",
     "CIERRE POR DESISTIMIENTO",
     "CIERRE POR RECHAZO",
-    "SOLICITUD DE PAGO GENERADA"
+    "DERIVADO A PARCIALES"
     ]
 
     df_cerrados = df_dash[df_dash["ESTATUS"].isin(estatus_cierre)]
