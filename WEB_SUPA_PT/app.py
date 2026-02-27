@@ -316,6 +316,7 @@ def panel_seguimiento(siniestro_id):
         ref["ESTATUS"] = nuevo_estatus
         ref["COMENTARIO"] = comentario
         ref["CORREO_LIQUIDADOR"] = st.session_state["USUARIO"]
+        ref["LIQUIDADOR"] = st.session_state["LIQUIDADOR"]
 
         supabase.table("BitacoraOperaciones").insert(ref).execute()
 
